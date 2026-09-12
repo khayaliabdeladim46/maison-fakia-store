@@ -8,7 +8,7 @@ import { MessageSquare, ChevronLeft, ChevronRight, CheckCheck } from 'lucide-rea
 /* =====================================================================
    1. TESTIMONIALS SECTION (EDGE-TO-EDGE BEIGE BACKGROUND)
    ===================================================================== */
-export function TestimonialsSection({ lang = 'fr', t }: { lang?: string; t?: any }) {
+export function TestimonialsSection({ lang = 'fr' }: { lang?: string }) {
     const [activeTab, setActiveTab] = useState(0);
 
     const ugcFeedbacks = [
@@ -152,7 +152,7 @@ export function TestimonialsSection({ lang = 'fr', t }: { lang?: string; t?: any
 /* =====================================================================
    2. FOOTER (EDGE-TO-EDGE FULL WIDTH)
    ===================================================================== */
-export function Footer({ lang = 'fr', t }: { lang?: string; t?: any }) {
+export function Footer({ lang = 'fr' }: { lang?: string }) {
     return (
         <footer className="w-full bg-[#FDFBF7] text-[#1E3A2B] border-t border-[#1E3A2B]/10 py-10 px-4 font-sans">
             <div className="max-w-xl mx-auto flex flex-col items-center justify-center text-center space-y-3">

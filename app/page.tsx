@@ -1,53 +1,117 @@
 'use client';
 
 import { useState } from 'react';
-import Header from '../components/Header';
-import HeroSlider from '../components/HeroSlider';
-import WhyUsMinimal from '../components/WhyUsMinimal';
-import CustomPackBuilder from '../components/CustomPackBuilder';
-import FaqWithVideoSection from '../components/FaqWithVideoSection';
-import ProductDetailModal from '../components/ProductDetailModal';
-import CodModal from '../components/CodModal';
-import WhatsAppButton from '../components/WhatsAppButton';
-import LiveSalesNotification from '../components/LiveSalesNotification';
-import { TestimonialsSection, Footer } from '../components/ExtraSections';
-import { PRODUCTS, Product } from '../lib/products';
-import { translations } from '../lib/translations';
-import { ShoppingBag, Eye } from 'lucide-react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { Eye, ShoppingBag } from 'lucide-react';
+import Header from '@/components/Header';
+import HeroSlider from '@/components/HeroSlider';
+import WhyUsMinimal from '@/components/WhyUsMinimal';
+import CustomPackBuilder from '@/components/CustomPackBuilder';
+import FaqWithVideoSection from '@/components/FaqWithVideoSection';
+import ProductDetailModal from '@/components/ProductDetailModal';
+import CodModal from '@/components/CodModal';
+import LiveSalesNotification from '@/components/LiveSalesNotification';
+import WhatsAppButton from '@/components/WhatsAppButton';
+import { TestimonialsSection, Footer } from '@/components/ExtraSections';
+
+const PRODUCTS = [
+    {
+        id: 'miel-amandes',
+        nameFr: 'Granola Miel & Amandes',
+        nameAr: 'جرانولا العسل واللوز',
+        price: 75,
+        image: '/doypack_miel_amandes.png',
+    },
+    {
+        id: 'chocolat-noir',
+        nameFr: 'Granola Chocolat Noir',
+        nameAr: 'جرانولا الشوكولاتة السوداء',
+        price: 80,
+        image: '/doypack_chocolat_noir.png',
+    },
+    {
+        id: 'amlou-argan',
+        nameFr: 'Granola Amlou & Argan',
+        nameAr: 'جرانولا أملو وزيت الأركان',
+        price: 85,
+        image: '/doypack_amlou_argan.png',
+    },
+    {
+        id: 'mix-energie',
+        nameFr: 'Mix Fruits Secs Énergie',
+        nameAr: 'فواكه جافة مشكلة طاقة',
+        price: 70,
+        image: '/doypack_fruits_secs.png',
+    },
+    {
+        id: 'energy-balls',
+        nameFr: 'Energy Balls Dattes & Noix',
+        nameAr: 'كرات الطاقة بالتمر والجوز',
+        price: 65,
+        image: '/doypack_energy_balls.png',
+    },
+    {
+        id: 'pro-sport',
+        nameFr: 'Granola Pro-Sport Protéiné',
+        nameAr: 'جرانولا بروتين للرياضيين',
+        price: 90,
+        image: '/doypack_pro_sport.png',
+    }
+];
+
+const translations: any = {
+    fr: {
+        dir: 'ltr',
+        collectionBadge: 'NOS CRÉATIONS',
+        collectionTitle: 'Sélection Artisanale & Healthy',
+        buyBtn: 'Commander',
+    },
+    ar: {
+        dir: 'rtl',
+        collectionBadge: 'تشكيلتنا الفاخرة',
+        collectionTitle: 'جرانولا وسناكات طبيعية 100%',
+        buyBtn: 'طلب الآن',
+    }
+};
 
 export default function Home() {
     const [lang, setLang] = useState<'fr' | 'ar'>('fr');
-    const [viewProduct, setViewProduct] = useState<Product | null>(null);
+    const [viewProduct, setViewProduct] = useState<any | null>(null);
     const [orderProduct, setOrderProduct] = useState<any | null>(null);
-    const [showAllMobile, setShowAllMobile] = useState<boolean>(false);
 
     const t = translations[lang];
 
     return (
         <div dir={t.dir} className="bg-[#FDFBF7] text-[#1E3A2B] min-h-screen font-sans">
-            {/* 1. Header Navbar */}
+            {/* Navbar */}
             <Header lang={lang} setLang={setLang} t={t} />
 
-            {/* 2. Hero Section */}
+            {/* Hero Slider */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6">
                 <HeroSlider t={t} />
             </main>
 
-            {/* 3. Pure Minimalist Trust Bar */}
+            {/* Trust Bar */}
             <WhyUsMinimal t={t} />
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6">
-                {/* 4. Products Collection Grid with Clean Spacing */}
-                {/* SECTION PRODUITS */}
-                <section id="products" className="py-14 px-4 max-w-6xl mx-auto">
 
-                    {/* Header ديال المنتجات الأصلي ديالك */}
+                {/* 1. Products Collection Grid (2x2 Mobile / 3 Columns Desktop) */}
+                <section id="collection" className="pt-10 pb-8">
+                    <div className="text-center max-w-xl mx-auto mb-8 space-y-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-[#D97706] block">
+                          {t.collectionBadge}
+                        </span>
+                        <h2 className="text-2xl sm:text-3xl font-bold text-[#1E3A2B] leading-tight">
+                            {t.collectionTitle}
+                        </h2>
+                    </div>
 
-                    {/* Grid 2 كولون فـ التلفون (2x2) و 3 فـ البيسي */}
+                    {/* ✅ 2 Columns Grid on Mobile (2x2) and 3 on Desktop */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
-                        {visibleProducts.map((prod: any, index: number) => {
-                            const name = lang === 'ar' ? (prod.nameAr || prod.name) : (prod.nameFr || prod.name);
+                        {PRODUCTS.slice(0, 4).map((prod: any, index: number) => {
+                            const name = lang === 'ar' ? prod.nameAr : prod.nameFr;
 
                             return (
                                 <motion.div
@@ -56,10 +120,8 @@ export default function Home() {
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true }}
                                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                                    whileHover={{ y: -3 }}
                                     className="bg-white border border-[#1E3A2B]/10 rounded-2xl p-3 sm:p-4 flex flex-col justify-between shadow-xs hover:border-[#1E3A2B]/30 transition duration-300 group"
                                 >
-                                    {/* Image Container with Preview Hover */}
                                     <div
                                         onClick={() => setViewProduct(prod)}
                                         className="relative rounded-xl overflow-hidden h-36 sm:h-48 mb-3 bg-[#F4EFEA] cursor-pointer"
@@ -71,9 +133,9 @@ export default function Home() {
                                         />
 
                                         <div className="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
-              <span className="px-3 py-1.5 rounded-lg bg-white/90 backdrop-blur-xs text-[#1E3A2B] text-[10px] sm:text-[11px] font-bold shadow-xs flex items-center gap-1">
-                <Eye size={13} /> {lang === 'ar' ? 'عرض التفاصيل' : 'Détails'}
-              </span>
+                                            <span className="px-3 py-1.5 rounded-lg bg-white/90 backdrop-blur-xs text-[#1E3A2B] text-[10px] sm:text-[11px] font-bold shadow-xs flex items-center gap-1">
+                                                <Eye size={13} /> {lang === 'ar' ? 'عرض التفاصيل' : 'Détails'}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -102,42 +164,35 @@ export default function Home() {
                         })}
                     </div>
 
-                    {/* زر Voir Tout فـ التلفون */}
-                    {!showAllMobile && products.length > 4 && (
-                        <div className="mt-8 text-center md:hidden">
-                            <button
-                                onClick={() => setShowAllMobile(true)}
-                                className="w-full bg-white border-2 border-[#1E3A2B] text-[#1E3A2B] font-extrabold text-xs py-3.5 px-6 rounded-xl shadow-xs active:scale-95 transition"
-                            >
-                                {lang === 'ar' ? `عرض جميع المنتجات (${products.length})` : `Voir Tous Les Produits (${products.length})`}
-                            </button>
-                        </div>
-                    )}
-
+                    {/* ✅ زر Voir Tout كيدي لـ /products */}
+                    <div className="mt-8 text-center">
+                        <Link
+                            href="/products"
+                            className="inline-block w-full sm:w-auto bg-[#1E3A2B] hover:bg-[#D97706] text-white font-extrabold text-xs py-3.5 px-8 rounded-xl shadow-md transition active:scale-95 text-center"
+                        >
+                            {lang === 'ar' ? 'Voir Tout (عرض جميع المنتجات)' : 'Voir Tous Les Produits (Voir Tout)'}
+                        </Link>
+                    </div>
                 </section>
 
+                {/* 2. Pack Trio Section (Slide أفقي فـ التلفون) */}
+                <div className="overflow-x-auto md:overflow-visible pb-4 scrollbar-none snap-x snap-mandatory">
+                    <CustomPackBuilder onOrderCustomPack={(pack: any) => setOrderProduct(pack)} t={t} lang={lang} />
+                </div>
 
-                {/* 5. Pack Trio Section */}
-                <CustomPackBuilder onOrderCustomPack={(pack: any) => setOrderProduct(pack)} t={t} lang={lang} />
-
-                {/* 6. Avis Clients */}
-                <TestimonialsSection t={t} lang={lang} />
-
-                {/* 7. Video Petit-Déjeuner + FAQ Accordion */}
+                {/* 3. Video + FAQ */}
                 <FaqWithVideoSection t={t} lang={lang} />
+
+                {/* 4. Avis Clients (خلفية خضراء ملكية خفيفة) */}
+                <TestimonialsSection t={t} lang={lang} />
             </main>
 
-            {/* 8. Footer */}
-            <Footer t={t} />
+            {/* Footer (خلفية خضراء داكنة) */}
+            <Footer t={t} lang={lang} />
 
-            {/* Live Sales Notification */}
+            {/* Modals & Live Notifications */}
             <LiveSalesNotification lang={lang} />
-            {/* Avis Client */}
-            <TestimonialsSection lang={lang} t={t} />
 
-            {/* Footer */}
-            <Footer lang={lang} t={t} />
-            {/* Product Detail Modal */}
             <ProductDetailModal
                 product={viewProduct}
                 onClose={() => setViewProduct(null)}
@@ -148,7 +203,6 @@ export default function Home() {
                 lang={lang}
             />
 
-            {/* Express Order Modal COD */}
             <CodModal
                 product={orderProduct}
                 onClose={() => setOrderProduct(null)}
@@ -156,7 +210,6 @@ export default function Home() {
                 lang={lang}
             />
 
-            {/* Floating WhatsApp */}
             <WhatsAppButton lang={lang} />
         </div>
     );
