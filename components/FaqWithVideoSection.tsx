@@ -1,136 +1,128 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Sparkles, Play } from 'lucide-react';
+import { Play, Pause, ChevronDown, HelpCircle, Video } from 'lucide-react';
 
-export default function FaqWithVideoSection({ t = {}, lang = 'fr' }: any) {
+export interface FaqWithVideoSectionProps {
+    lang?: 'fr' | 'ar' | string;
+    t?: any;
+}
+
+export default function FaqWithVideoSection({ t, lang = 'fr' }: FaqWithVideoSectionProps) {
     const [openIdx, setOpenIdx] = useState<number | null>(0);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    const videoRef = useRef<HTMLVideoElement | null>(null);
 
-    const safeT = t || {};
-
-    const recipeBadge = safeT.recipeBadge || (lang === 'ar' ? 'وصفة الفطور الصحي' : 'Recette Petit-Déjeuner');
-    const recipeTitle = safeT.recipeTitle || (lang === 'ar' ? 'كيفاش تحضّر فطور صحّي ولذيذ f 2 دقائق بـ الجرانولا والياغورت' : 'Comment préparer un petit-déjeuner sain en 2 min avec le Granola');
-    const recipeDesc = safeT.recipeDesc || (lang === 'ar' ? 'استمتع بقرمشة الجرانولا الطبيعية مع الياغورت والفواكه الطازجة لفطور غني بالفيتمينات والطاقة طيلة اليوم.' : 'Savourez le croustillant de notre granola naturel avec du yaourt et des fruits frais pour faire le plein d énergie.');
-    const faqBadge = safeT.faqBadge || (lang === 'ar' ? 'أسئلة شائعة' : 'Questions Fréquentes');
-    const faqTitle = safeT.faqTitle || (lang === 'ar' ? 'كل ما تحتاج معرفته قبل الطلب' : 'Tout ce que vous devez savoir');
-
-    const togglePlay = () => {
+    const toggleVideo = () => {
         if (videoRef.current) {
             if (isPlaying) {
                 videoRef.current.pause();
-                setIsPlaying(false);
             } else {
-                videoRef.current.play().catch(() => {});
-                setIsPlaying(true);
+                videoRef.current.play();
             }
+            setIsPlaying(!isPlaying);
         }
     };
 
-    const faqs = [
+    const isAr = lang === 'ar';
+
+    const defaultFaqs = [
         {
-            q: lang === 'ar' ? "كيف تتم عملية التوصيل والدفع؟" : "Comment se déroule la livraison et le paiement?",
-            a: lang === 'ar' ? "تصلك الطلبية خلال 24 إلى 48 ساعة والدفع نقداً عند الاستلام مع إمكانية المعاينة قبل الأداء." : "Livraison express en 24h/48h partout au Maroc avec paiement Cash à la livraison après vérification du colis."
+            q: isAr ? 'كيفاش نقدر نطلب المنتجات؟' : 'Comment puis-je passer une commande ?',
+            a: isAr ? 'تقدر تطلب مباشرة عبر الموقع باختيار المنتجات أو الـ Pack المناسب، وتدخل معلوماتك (الاسم، الهاتف، المدينة) فـ نموذج الدفع عند الاستلام (COD).' : 'Vous pouvez commander directement sur le site en choisissant vos produits ou votre Pack, puis en remplissant vos coordonnées dans le formulaire de paiement à la livraison.'
         },
         {
-            q: lang === 'ar' ? "كم هي مدة صلاحية أكياس الجرانولا؟" : "Quelle est la durée de conservation du Granola?",
-            a: lang === 'ar' ? "بفضل أكياس Doypack الكرافت المحكمة الإغلاق مع Zip، تحافظ الجرانولا على قرمشتها وطراوتها حتى 6 أشهر." : "Grâce au sachet Doypack hermétique avec zip, votre granola conserve son croustillant jusqu à 6 mois."
+            q: isAr ? 'شحال كاياخد التوصيل من وقت؟' : 'Quels sont les délais de livraison ?',
+            a: isAr ? 'التوصيل سريع كاياخد من 24 إلى 48 ساعة فـ جميع المدن المغربية.' : 'La livraison est rapide et prend entre 24 et 48 heures partout au Maroc.'
         },
         {
-            q: lang === 'ar' ? "هل المنتجات خالية من السكر المكرر؟" : "Les produits sont-ils sans sucre raffiné?",
-            a: lang === 'ar' ? "نعم 100%! منتجاتنا محلاة حصرياً بعسل الليمون الحر وزيت الأركان البيو وبدون أي مواد حافظة." : "Oui 100%! Nos recettes sont sucrées exclusivement au miel pur d oranger et huile d Argan bio."
+            q: isAr ? 'واش كاين الدفع عند الاستلام؟' : 'Proposez-vous le paiement à la livraison ?',
+            a: isAr ? 'نعم! كاتفحص الطلبية ديالك وتتأكد منها عاد كادفع للموزع.' : 'Oui ! Vous vérifiez votre commande à la réception avant de payer le livreur.'
+        },
+        {
+            q: isAr ? 'واش المنتجات طبيعية 100%؟' : 'Les produits sont-ils 100% naturels ?',
+            a: isAr ? 'نعم، جميع منتجات ميزون فاكهة طبيعية، بدون مواد حافظة وبدون سكر مضاف.' : 'Oui, tous les produits Maison Fakia sont 100% naturels, sans conservateurs ni sucres ajoutés.'
         }
     ];
 
     return (
-        <section className="py-8 sm:py-12 max-w-7xl mx-auto px-4 sm:px-6 text-[#1E3A2B] my-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
+        <section className="py-16 bg-[#FDFBF7] border-t border-slate-200/60" id="faq">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
-                {/* Video Player Column */}
-                <div className="bg-[#1E3A2B] text-[#FDFBF7] rounded-2xl p-4 sm:p-6 shadow-md border border-emerald-900/60 space-y-3.5">
-                    <div className="flex items-center gap-2 text-[#D97706] text-[11px] font-bold uppercase tracking-wider">
-                        <Sparkles size={14} />
-                        <span>{recipeBadge}</span>
-                    </div>
-
-                    <h3 className="text-base sm:text-lg font-bold text-white leading-snug">
-                        {recipeTitle}
-                    </h3>
-
-                    {/* Custom Video Player Container */}
-                    <div
-                        className="relative rounded-xl overflow-hidden bg-[#142A1E] border border-emerald-800/60 aspect-video w-full shadow-inner group cursor-pointer"
-                        onClick={togglePlay}
-                    >
-                        <video
-                            ref={videoRef}
-                            controls
-                            playsInline
-                            muted
-                            preload="metadata"
-                            poster="/doypack_miel_amandes.png"
-                            onPlay={() => setIsPlaying(true)}
-                            onPause={() => setIsPlaying(false)}
-                            className="w-full h-full object-cover"
-                        >
-                            <source src="/granola.mp4" type="video/mp4" />
-                            <source src="https://vjs.zencdn.net/v/oceans.mp4" type="video/mp4" />
-                        </video>
-
-                        {/* Dark Overlay with Blur to maximize Play Button contrast */}
-                        {!isPlaying && (
-                            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1.5px] flex items-center justify-center transition-all pointer-events-none group-hover:bg-black/30">
-                                <div className="w-14 h-14 rounded-full bg-[#D97706] text-white flex items-center justify-center shadow-xl transform group-hover:scale-110 transition duration-300 ring-4 ring-white/20">
-                                    <Play size={24} className="ml-1 fill-white" />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <p className="text-[11px] text-[#F4EFEA]/80 font-medium leading-relaxed">
-                        {recipeDesc}
-                    </p>
+                {/* Header */}
+                <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
+          <span className="inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase text-[#D97706] bg-[#D97706]/10 px-3 py-1 rounded-full">
+            <HelpCircle size={14} />
+              {t?.faqBadge || (isAr ? 'أسئلة شائعة' : 'FAQ & Démonstration')}
+          </span>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-[#1E3A2B]">
+                        {t?.faqTitle || (isAr ? 'كل ما تحتاج معرفته عن منتجاتنا' : 'Tout Ce Que Vous Devez Savoir')}
+                    </h2>
                 </div>
 
-                {/* FAQ Accordion Column */}
-                <div className="bg-[#F4EFEA] border border-[#1E3A2B]/10 rounded-2xl p-4 sm:p-6 shadow-2xs space-y-4">
-                    <div className="space-y-1">
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-[#D97706]">{faqBadge}</span>
-                        <h3 className="text-base sm:text-lg font-bold text-[#1E3A2B]">{faqTitle}</h3>
+                <div className="grid md:grid-cols-2 gap-8 items-start">
+
+                    {/* Video Box */}
+                    <div className="bg-white rounded-2xl overflow-hidden shadow-lg border border-slate-100 p-4 space-y-4">
+                        <div className="relative rounded-xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center">
+                            <video
+                                ref={videoRef}
+                                src="/granola.mp4"
+                                poster="/doypack_3_flavors_lineup.png"
+                                className="w-full h-full object-cover"
+                                onEnded={() => setIsPlaying(false)}
+                            />
+                            <button
+                                onClick={toggleVideo}
+                                className="absolute w-14 h-14 bg-[#D97706] hover:bg-[#B45309] text-white rounded-full flex items-center justify-center shadow-xl transition cursor-pointer hover:scale-105"
+                            >
+                                {isPlaying ? <Pause size={24} /> : <Play size={24} className="ml-1" />}
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-3 px-2">
+                            <div className="w-10 h-10 rounded-full bg-[#1E3A2B]/10 text-[#1E3A2B] flex items-center justify-center shrink-0">
+                                <Video size={20} />
+                            </div>
+                            <div>
+                                <h4 className="text-xs font-bold text-[#1E3A2B]">
+                                    {t?.recipeTitle || (isAr ? 'طريقة التحضير والجودة' : 'Découvrez Nos Produits')}
+                                </h4>
+                                <p className="text-[11px] text-slate-500 font-medium">
+                                    {t?.recipeDesc || (isAr ? 'شاهد مكونات الجرانولا الطبيعية وكيفية إعدادها' : 'Aperçu vidéo de nos ingrédients 100% naturels')}
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="space-y-2">
-                        {faqs.map((faq, idx) => {
+                    {/* FAQ Accordion */}
+                    <div className="space-y-3">
+                        {defaultFaqs.map((item, idx) => {
                             const isOpen = openIdx === idx;
                             return (
-                                <div key={idx} className="bg-white border border-[#1E3A2B]/15 rounded-xl overflow-hidden shadow-2xs transition">
+                                <div
+                                    key={idx}
+                                    className="bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-xs transition"
+                                >
                                     <button
                                         onClick={() => setOpenIdx(isOpen ? null : idx)}
-                                        className="w-full p-3.5 text-left flex justify-between items-center text-xs font-bold text-[#1E3A2B] hover:text-[#D97706] transition gap-2"
+                                        className="w-full p-4 text-left flex items-center justify-between gap-3 font-bold text-xs sm:text-sm text-[#1E3A2B] hover:text-[#D97706] transition cursor-pointer"
                                     >
-                                        <span>{faq.q}</span>
-                                        <ChevronDown size={15} className={`shrink-0 transition-transform duration-300 \${isOpen ? 'rotate-180 text-[#D97706]' : ''}`} />
+                                        <span>{item.q}</span>
+                                        <ChevronDown
+                                            size={18}
+                                            className={`shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-[#D97706]' : 'text-slate-400'}`}
+                                        />
                                     </button>
-
-                                    <AnimatePresence>
-                                        {isOpen && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                transition={{ duration: 0.2 }}
-                                                className="overflow-hidden bg-[#FDFBF7]"
-                                            >
-                                                <p className="p-3.5 pt-1 text-[11px] text-[#1E3A2B]/80 font-medium leading-relaxed border-t border-slate-100">{faq.a}</p>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
+                                    {isOpen && (
+                                        <div className="px-4 pb-4 text-xs text-slate-600 leading-relaxed font-medium border-t border-slate-100 pt-3">
+                                            {item.a}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
                     </div>
+
                 </div>
 
             </div>
