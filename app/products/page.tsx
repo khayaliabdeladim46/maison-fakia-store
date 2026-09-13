@@ -100,8 +100,8 @@ export default function ProductsPage() {
     const t = translations[lang];
 
     return (
-        <div dir={t.dir} className="bg-[#FDFBF7] text-[#1E3A2B] min-h-screen font-sans overflow-x-hidden pt-20 sm:pt-24">
-            {/* 1. Header (Identical to Main Page) */}
+        <div dir={t.dir} className="bg-[#FDFBF7] text-[#1E3A2B] min-h-screen font-sans overflow-x-hidden">
+            {/* Header */}
             <Header lang={lang} setLang={setLang} t={t} />
 
             <main className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-10 space-y-10 sm:space-y-14">
@@ -128,7 +128,7 @@ export default function ProductsPage() {
                     </div>
                 </div>
 
-                {/* 2. All Products Grid */}
+                {/* All Products Grid */}
                 <section className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
                     {PRODUCTS.map((prod: any, index: number) => {
                         const name = lang === 'ar' ? prod.nameAr : prod.nameFr;
@@ -193,15 +193,12 @@ export default function ProductsPage() {
                     })}
                 </section>
 
-                {/* 3. Testimonials Section (Avis Clients) */}
                 <TestimonialsSection t={t} lang={lang} />
 
             </main>
 
-            {/* 4. Footer */}
             <Footer t={t} lang={lang} />
 
-            {/* Modals & Live Sales */}
             <LiveSalesNotification lang={lang} />
 
             <ProductDetailModal

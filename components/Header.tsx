@@ -20,7 +20,7 @@ export default function Header({ lang, setLang, t }: any) {
     }, []);
 
     return (
-        <header className="fixed top-0 left-0 w-full z-50 bg-[#FDFBF7]/95 backdrop-blur-md border-b border-[#1E3A2B]/10 shadow-2xs transition-all duration-300">
+        <header className="sticky top-0 z-50 bg-[#FDFBF7]/95 backdrop-blur-md border-b border-[#1E3A2B]/10 shadow-2xs transition-all duration-300">
 
             {/* Top Banner - Hides automatically on scroll */}
             <div
@@ -35,8 +35,8 @@ export default function Header({ lang, setLang, t }: any) {
                 </p>
             </div>
 
-            {/* Main Navbar - Always fixed & clean */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between relative">
+            {/* Main Navbar */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between relative">
 
                 {/* Left Spacer for symmetry */}
                 <div className="w-20 hidden sm:block"></div>

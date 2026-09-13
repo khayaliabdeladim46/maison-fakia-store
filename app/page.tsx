@@ -90,22 +90,24 @@ export default function Home() {
     const t = translations[lang];
 
     return (
-        <div dir={t.dir} className="bg-[#FDFBF7] text-[#1E3A2B] min-h-screen font-sans overflow-x-hidden">
-            {/* Header */}
+        <div dir={t.dir} className="bg-[#FDFBF7] text-[#1E3A2B] min-h-screen font-sans pt-[90px] sm:pt-[105px]">
+            {/* Header (Fixed Navbar) */}
             <Header lang={lang} setLang={setLang} t={t} />
 
             {/* Hero Slider */}
-            <main className="max-w-7xl mx-auto px-3 sm:px-6">
+            <main className="max-w-7xl mx-auto px-3 sm:px-6 mb-6 sm:mb-10">
                 <HeroSlider t={t} />
             </main>
 
-            {/* Trust Bar */}
-            <WhyUsMinimal t={t} />
+            {/* Trust Bar (Why Us) */}
+            <section className="my-6 sm:my-10">
+                <WhyUsMinimal t={t} />
+            </section>
 
             <main className="max-w-7xl mx-auto px-3 sm:px-6 space-y-10 sm:space-y-14">
 
-                {/* 1. Products Section (3x2 Grid on Desktop / 2x3 on Mobile) */}
-                <section id="collection" className="pt-4 sm:pt-8">
+                {/* 1. Products Section */}
+                <section id="collection" className="pt-2 sm:pt-4">
                     <div className="text-center max-w-xl mx-auto mb-6 sm:mb-8 space-y-1.5 px-2">
                         <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D97706] block">
                           {t.collectionBadge}
@@ -115,7 +117,7 @@ export default function Home() {
                         </h2>
                     </div>
 
-                    {/* ✅ 6 Products Grid (3 Columns Desktop = 3x2) */}
+                    {/* All Products Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2.5 sm:gap-6">
                         {PRODUCTS.map((prod: any, index: number) => {
                             const name = lang === 'ar' ? prod.nameAr : prod.nameFr;
@@ -156,7 +158,7 @@ export default function Home() {
                                         </h3>
                                     </div>
 
-                                    {/* Price with Clean Strikethrough Effect */}
+                                    {/* Price with Strikethrough Effect */}
                                     <div className="mt-2.5 sm:mt-3 border-t border-[#1E3A2B]/10 pt-2 sm:pt-3 flex items-center justify-between gap-1">
                                         <div className="flex flex-col">
                                             {prod.oldPrice && (
@@ -182,7 +184,7 @@ export default function Home() {
                         })}
                     </div>
 
-                    {/* ✅ Button "Voir Tous Les Produits" VISIBLE ON ALL DEVICES (Desktop + Mobile) */}
+                    {/* Button "Voir Tous Les Produits" */}
                     <div className="mt-6 sm:mt-8 text-center">
                         <Link
                             href="/products"

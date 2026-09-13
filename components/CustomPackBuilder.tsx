@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Check, ShoppingBag, Trash2 } from 'lucide-react';
+import { Plus, Check, ShoppingBag, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 
 const PACK_OPTIONS = [
     { id: 'miel-amandes', nameFr: 'Granola Miel & Amandes', nameAr: 'جرانولا العسل واللوز', image: '/doypack_miel_amandes.png' },
@@ -15,6 +15,7 @@ const PACK_OPTIONS = [
 export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }: any) {
     const isAr = lang === 'ar';
     const [selectedItems, setSelectedItems] = useState<any[]>([]);
+    const [showAllOptionsMobile, setShowAllOptionsMobile] = useState(false);
 
     const addItem = (item: any) => {
         if (selectedItems.length < 3) {
@@ -62,7 +63,7 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
                     </p>
                 </div>
 
-                {/* Progress Bar & Header */}
+                {/* Progress Bar */}
                 <div className="max-w-xl mx-auto space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-slate-200 px-0.5">
             <span>
@@ -75,7 +76,6 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
             </span>
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="w-full bg-white/15 h-2 rounded-full overflow-hidden border border-white/10">
                         <div
                             className="bg-[#D97706] h-full transition-all duration-500 ease-out rounded-full shadow-xs"
@@ -84,7 +84,7 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
                     </div>
                 </div>
 
-                {/* 3 Slots (Mobile Responsive) */}
+                {/* 3 Selected Slots */}
                 <div className="grid grid-cols-3 gap-2 sm:gap-4 max-w-xl mx-auto">
                     {[0, 1, 2].map((slotIndex) => {
                         const item = selectedItems[slotIndex];
@@ -100,6 +100,7 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
                                 {item ? (
                                     <>
                                         <button
+                                            type="button"
                                             onClick={() => removeItem(slotIndex)}
                                             className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-xs transition active:scale-95 cursor-pointer"
                                             title={isAr ? 'مسح هاد المنتج' : 'Supprimer'}
@@ -127,16 +128,19 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
                     })}
                 </div>
 
-                {/* Option Cards (Flex Vertical on Mobile to prevent squishing) */}
+                {/* Option Cards (4 on mobile initially, 6 on desktop) */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pt-1">
-                    {PACK_OPTIONS.map((opt) => {
+                    {PACK_OPTIONS.map((opt, index) => {
                         const countInPack = selectedItems.filter((i) => i.id === opt.id).length;
                         const isSelected = countInPack > 0;
+                        const isHiddenOnMobile = !showAllOptionsMobile && index >= 4;
 
                         return (
                             <div
                                 key={opt.id}
-                                className={`border rounded-xl sm:rounded-2xl p-2 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-2 transition duration-200 ${
+                                className={`border rounded-xl sm:rounded-2xl p-2 sm:p-3 flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-2 transition duration-200 ${
+                                    isHiddenOnMobile ? 'hidden sm:flex' : 'flex'
+                                } ${
                                     isSelected ? 'border-[#D97706] bg-white text-[#1E3A2B] shadow-xs' : 'border-white/15 bg-white/10 text-white'
                                 }`}
                             >
@@ -151,6 +155,7 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
                                 </div>
 
                                 <button
+                                    type="button"
                                     onClick={() => addItem(opt)}
                                     disabled={isFull}
                                     className={`w-full sm:w-auto px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg text-[9px] sm:text-[10px] font-extrabold flex items-center justify-center gap-1 transition shrink-0 ${
@@ -158,7 +163,7 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
                                             ? 'bg-emerald-700 text-white'
                                             : isFull
                                                 ? 'bg-white/10 text-slate-400 cursor-not-allowed'
-                                                : 'bg-[#D97706] hover:bg-[#b56305] text-white active:scale-95'
+                                                : 'bg-[#D97706] hover:bg-[#b56305] text-white active:scale-95 cursor-pointer'
                                     }`}
                                 >
                                     {isSelected ? (
@@ -178,9 +183,31 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
                     })}
                 </div>
 
+                {/* Big Toggle Button for Mobile */}
+                <div className="text-center sm:hidden pt-2">
+                    <button
+                        type="button"
+                        onClick={() => setShowAllOptionsMobile(!showAllOptionsMobile)}
+                        className="w-full bg-[#D97706] hover:bg-[#b56305] text-white font-extrabold text-xs py-3 px-4 rounded-xl shadow-xs transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                        {showAllOptionsMobile ? (
+                            <>
+                                <span>{isAr ? 'إخفاء الخيارات الإضافية' : 'Voir moins d\'options'}</span>
+                                <ChevronUp size={16} />
+                            </>
+                        ) : (
+                            <>
+                                <span>{isAr ? 'عرض جميع الخيارات (6 نكهات)' : 'Voir plus d\'options (Voir Tout)'}</span>
+                                <ChevronDown size={16} />
+                            </>
+                        )}
+                    </button>
+                </div>
+
                 {/* CTA Button */}
                 <div className="pt-2 text-center">
                     <button
+                        type="button"
                         onClick={handleOrder}
                         disabled={!isFull}
                         className={`w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-extrabold text-xs sm:text-sm transition duration-300 flex items-center justify-center gap-2 shadow-md mx-auto ${
