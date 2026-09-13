@@ -90,8 +90,8 @@ export default function Home() {
     const t = translations[lang];
 
     return (
-        <div dir={t.dir} className="bg-[#FDFBF7] text-[#1E3A2B] min-h-screen font-sans pt-[90px] sm:pt-[105px]">
-            {/* Header (Fixed Navbar) */}
+        <div dir={t.dir} className="bg-[#FDFBF7] text-[#1E3A2B] min-h-screen font-sans">
+            {/* Header */}
             <Header lang={lang} setLang={setLang} t={t} />
 
             {/* Hero Slider */}
@@ -205,11 +205,11 @@ export default function Home() {
                 <FaqWithVideoSection t={t} lang={lang} />
 
                 {/* 4. Avis Clients Testimonials */}
-                <TestimonialsSection t={t} lang={lang} />
+                <TestimonialsSection lang={lang} />
             </main>
 
             {/* Footer */}
-            <Footer t={t} lang={lang} />
+            <Footer lang={lang} />
 
             {/* Modals & Notifications */}
             <LiveSalesNotification lang={lang} />

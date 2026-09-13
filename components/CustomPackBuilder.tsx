@@ -128,7 +128,7 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
                     })}
                 </div>
 
-                {/* Option Cards (4 on mobile initially, 6 on desktop) */}
+                {/* Option Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pt-1">
                     {PACK_OPTIONS.map((opt, index) => {
                         const countInPack = selectedItems.filter((i) => i.id === opt.id).length;

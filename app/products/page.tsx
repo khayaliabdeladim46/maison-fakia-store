@@ -100,7 +100,7 @@ export default function ProductsPage() {
     const t = translations[lang];
 
     return (
-        <div dir={t.dir} className="bg-[#FDFBF7] text-[#1E3A2B] min-h-screen font-sans overflow-x-hidden">
+        <div dir={t.dir} className="bg-[#FDFBF7] text-[#1E3A2B] min-h-screen font-sans">
             {/* Header */}
             <Header lang={lang} setLang={setLang} t={t} />
 
@@ -193,11 +193,11 @@ export default function ProductsPage() {
                     })}
                 </section>
 
-                <TestimonialsSection t={t} lang={lang} />
+                <TestimonialsSection lang={lang} />
 
             </main>
 
-            <Footer t={t} lang={lang} />
+            <Footer lang={lang} />
 
             <LiveSalesNotification lang={lang} />
 

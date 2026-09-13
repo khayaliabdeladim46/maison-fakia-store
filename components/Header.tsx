@@ -1,33 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Globe } from 'lucide-react';
 
 export default function Header({ lang, setLang, t }: any) {
-    const [isScrolled, setIsScrolled] = useState(false);
-
-    // Detect Scroll position to hide/show Top Banner
-    useEffect(() => {
-        const handleScroll = () => {
-            if (window.scrollY > 30) {
-                setIsScrolled(true);
-            } else {
-                setIsScrolled(false);
-            }
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
-
     return (
-        <header className="sticky top-0 z-50 bg-[#FDFBF7]/95 backdrop-blur-md border-b border-[#1E3A2B]/10 shadow-2xs transition-all duration-300">
+        <header className="bg-[#FDFBF7] border-b border-[#1E3A2B]/10 shadow-2xs">
 
-            {/* Top Banner - Hides automatically on scroll */}
-            <div
-                className={`bg-[#1E3A2B] text-[#FDFBF7] text-[10px] sm:text-[11px] font-light text-center tracking-wide overflow-hidden transition-all duration-300 ease-in-out ${
-                    isScrolled ? 'max-h-0 py-0 opacity-0' : 'max-h-12 py-1.5 px-4 opacity-100'
-                }`}
-            >
+            {/* Top Delivery Banner */}
+            <div className="bg-[#1E3A2B] text-[#FDFBF7] text-[10px] sm:text-[11px] font-light text-center tracking-wide py-1.5 px-4">
                 <p className="max-w-7xl mx-auto">
                     {lang === 'ar'
                         ? 'توصيل سريع بجميع المدن المغربية (24h - 48h) • الدفع عند الاستلام'
@@ -41,7 +21,7 @@ export default function Header({ lang, setLang, t }: any) {
                 {/* Left Spacer for symmetry */}
                 <div className="w-20 hidden sm:block"></div>
 
-                {/* Center: Luxury Minimalist Logo */}
+                {/* Center Logo */}
                 <div className="text-center mx-auto sm:mx-0 sm:absolute sm:left-1/2 sm:-translate-x-1/2">
                     <a href="/" className="inline-block group">
                         <span className="text-lg sm:text-2xl font-serif tracking-[0.25em] text-[#1E3A2B] uppercase font-bold">
@@ -50,7 +30,7 @@ export default function Header({ lang, setLang, t }: any) {
                     </a>
                 </div>
 
-                {/* Right: Clean Language Pill Button */}
+                {/* Right Language Button */}
                 <button
                     onClick={() => setLang(lang === 'fr' ? 'ar' : 'fr')}
                     className="px-3 py-1 rounded-full border border-[#1E3A2B]/15 bg-white/80 hover:bg-white text-[11px] font-medium text-[#1E3A2B] shadow-2xs transition flex items-center gap-1.5 cursor-pointer active:scale-95"
