@@ -1,293 +1,227 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Eye, ShoppingBag, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { ArrowLeft, ShoppingBag, Eye, Globe, CheckCircle2, Star, Sparkles } from 'lucide-react';
-import CodModal from '@/components/CodModal';
+import Header from '@/components/Header';
 import ProductDetailModal from '@/components/ProductDetailModal';
+import CodModal from '@/components/CodModal';
+import LiveSalesNotification from '@/components/LiveSalesNotification';
+import WhatsAppButton from '@/components/WhatsAppButton';
+import { TestimonialsSection, Footer } from '@/components/ExtraSections';
 
-const ALL_PRODUCTS = [
+const PRODUCTS = [
     {
         id: 'miel-amandes',
         nameFr: 'Granola Miel & Amandes',
         nameAr: 'جرانولا العسل واللوز',
+        descFr: 'Miel pur d\'oranger, amandes grillées croquantes & graines de sésame.',
+        descAr: 'عسل الليمون الحر، لوز بلدي مقرمش وبذور السمسم.',
         price: 75,
-        weight: '500g',
+        oldPrice: 95,
         image: '/doypack_miel_amandes.png',
-        badgeFr: 'Best Seller',
-        badgeAr: 'الأكثر مبيعاً',
-        benefitsFr: ['Miel pur de fleur d\'oranger', 'Amandes grillées riches en Oméga-3', 'Sans sucre raffiné'],
-        benefitsAr: ['عسل زهر البرتقال الحر', 'لوز بلدي محمص غني بالأوميغا 3', 'بدون سكر أبيض مضاف'],
     },
     {
         id: 'chocolat-noir',
         nameFr: 'Granola Chocolat Noir',
         nameAr: 'جرانولا الشوكولاتة السوداء',
+        descFr: 'Pépites de chocolat noir 74% intense, noisettes & miel d\'oranger.',
+        descAr: 'حبيبات الشوكولاتة السوداء 74%، بندق وعسل الليمون.',
         price: 80,
-        weight: '500g',
+        oldPrice: 100,
         image: '/doypack_chocolat_noir.png',
-        badgeFr: 'Gourmand',
-        badgeAr: 'لذيذ جداً',
-        benefitsFr: ['Chocolat noir 70% antioxydant', 'Booster d\'énergie et de moral', 'Avoine complète croustillante'],
-        benefitsAr: ['شوكولاتة سوداء 70% مضادة للأكسدة', 'محفز طبيعي للطاقة والمزاج', 'شوفان كامل مقرمش'],
     },
     {
         id: 'amlou-argan',
         nameFr: 'Granola Amlou & Argan',
         nameAr: 'جرانولا أملو وزيت الأركان',
+        descFr: 'Avoine grillée, Amlou traditionnel à l\'huile d\'argan bio & miel pur.',
+        descAr: 'شوفان محمر، أملو بلدي بزيت الأركان الطبيعي وعسل الحر.',
         price: 85,
-        weight: '500g',
+        oldPrice: 110,
         image: '/doypack_amlou_argan.png',
-        badgeFr: 'Recette Beldi',
-        badgeAr: 'وصفة بلدية أصيلة',
-        benefitsFr: ['Véritable Amlou aux amandes', 'Huile d\'Argan bio de Souss', 'Recette marocaine authentique'],
-        benefitsAr: ['أملو بلدي خالص باللوز', 'زيت أركان للتغذية طبيعي 100%', 'وصفة مغربية أصيلة'],
     },
     {
         id: 'mix-energie',
         nameFr: 'Mix Fruits Secs Énergie',
         nameAr: 'فواكه جافة مشكلة طاقة',
+        descFr: 'Mélange premium d\'amandes, noix, anacardes et figues séchées bio.',
+        descAr: 'تشكيلة فاخرة من اللوز، الجوز، الكاجو والتين المجفف.',
         price: 70,
-        weight: '500g',
         image: '/doypack_fruits_secs.png',
-        badgeFr: '100% Naturel',
-        badgeAr: 'طبيعي 100%',
-        benefitsFr: ['Mélange de noix & cajou', 'Riche en magnésium et protéines', 'Parfait pour le sport et snack'],
-        benefitsAr: ['تشكيلة فاخرة من الجوز والكاجو', 'غني بالمغنيسيوم والبروتين', 'مثالي للرياضة والسناك الصحية'],
     },
     {
         id: 'energy-balls',
-        nameFr: 'Energy Balls Dattes & Noix',
-        nameAr: 'كرات الطاقة بالتمر والجوز',
-        price: 65,
-        weight: '400g',
+        nameFr: 'Pack Boules d’Énergie (Energy Balls)',
+        nameAr: 'باك كرات الطاقة بالتمر والجوز',
+        descFr: 'Bouchées énergétiques aux dattes Majhoul, noix & cacao brut.',
+        descAr: 'كرات مشبعة بتمر المجهول، الجوز والكاكاو الخام.',
+        price: 85,
+        oldPrice: 120,
         image: '/doypack_energy_balls.png',
-        badgeFr: 'Healthy Snack',
-        badgeAr: 'سناك صحي',
-        benefitsFr: ['100% dattes et cacao brut', 'Sans aucun sucre ajouté', 'Format prêt à emporter'],
-        benefitsAr: ['100% تمر طبيعي وكاكاو خام', 'بدون أي غرام سكر مضاف', 'سهلة الحمل للاستعمال اليومي'],
     },
     {
         id: 'pro-sport',
         nameFr: 'Granola Pro-Sport Protéiné',
         nameAr: 'جرانولا بروتين للرياضيين',
+        descFr: 'Enrichi en graines de courge, chia & protéines végétales naturelles.',
+        descAr: 'غني ببذور اليقطين، الشيا والبروتين النباتي للرياضيين.',
         price: 90,
-        weight: '500g',
+        oldPrice: 115,
         image: '/doypack_pro_sport.png',
-        badgeFr: 'High Protein',
-        badgeAr: 'غني بالبروتين',
-        benefitsFr: ['Enrichi en protéines végétales', 'Graines de chia et courge', 'Pour une récupération musculaire'],
-        benefitsAr: ['معزز بالبروتينات النباتية', 'بذور الشيا والقرع', 'بناء وترميم العضلات للرياضيين'],
     }
 ];
 
+const translations: any = {
+    fr: {
+        dir: 'ltr',
+        pageBadge: 'CATALOGUE COMPLET',
+        pageTitle: 'Tous Nos Produits Artisanaux',
+        pageSubtitle: 'Découvrez notre gamme complète de granolas faits-maison, fruits secs et snacks sains.',
+        backHome: 'Retour à l\'accueil',
+        buyBtn: 'Commander',
+    },
+    ar: {
+        dir: 'rtl',
+        pageBadge: 'الكتالوج الكامل',
+        pageTitle: 'جميع منتجاتنا الطبيعية والتقليدية',
+        pageSubtitle: 'اكتشف تشكيلتنا الكاملة من الجرانولا البلدي، الفواكه الجافة والسناكات الصحية.',
+        backHome: 'الرجوع للرئيسية',
+        buyBtn: 'طلب الآن',
+    }
+};
+
 export default function ProductsPage() {
     const [lang, setLang] = useState<'fr' | 'ar'>('fr');
-    const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
-    const [viewModalProduct, setViewModalProduct] = useState<any | null>(null);
+    const [viewProduct, setViewProduct] = useState<any | null>(null);
+    const [orderProduct, setOrderProduct] = useState<any | null>(null);
 
-    const isAr = lang === 'ar';
+    const t = translations[lang];
 
     return (
-        <div className="min-h-screen bg-[#FDFBF7] text-[#1E3A2B]" dir={isAr ? 'rtl' : 'ltr'}>
+        <div dir={t.dir} className="bg-[#FDFBF7] text-[#1E3A2B] min-h-screen font-sans overflow-x-hidden pt-20 sm:pt-24">
+            {/* 1. Header (Identical to Main Page) */}
+            <Header lang={lang} setLang={setLang} t={t} />
 
-            {/* 1. Header with Brand Logo */}
-            <header className="bg-white border-b border-[#1E3A2B]/10 px-4 py-4 sticky top-0 z-30 shadow-xs">
-                <div className="max-w-6xl mx-auto flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-2 text-xs font-bold text-[#1E3A2B] hover:text-[#D97706] transition">
-                        <ArrowLeft size={16} />
-                        <span>{isAr ? 'الرجوع للرئيسية' : 'Retour à l\'accueil'}</span>
+            <main className="max-w-7xl mx-auto px-3 sm:px-6 py-6 sm:py-10 space-y-10 sm:space-y-14">
+
+                <div className="space-y-4">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1E3A2B]/70 hover:text-[#D97706] transition"
+                    >
+                        <ArrowLeft size={14} className={lang === 'ar' ? 'rotate-180' : ''} />
+                        <span>{t.backHome}</span>
                     </Link>
 
-                    {/* Logo Branding */}
-                    <div className="text-center">
-                        <h1 className="text-lg font-black tracking-tight text-[#1E3A2B]">MAISON FAKIA</h1>
-                        <p className="text-[9px] font-bold tracking-widest text-[#D97706] uppercase">Artisanal & Healthy</p>
+                    <div className="text-center max-w-2xl mx-auto space-y-2">
+                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D97706] bg-[#D97706]/10 px-3 py-1 rounded-full inline-block">
+                            {t.pageBadge}
+                        </span>
+                        <h1 className="text-2xl sm:text-4xl font-extrabold text-[#1E3A2B] leading-tight">
+                            {t.pageTitle}
+                        </h1>
+                        <p className="text-xs sm:text-sm text-slate-500 font-medium max-w-lg mx-auto leading-relaxed">
+                            {t.pageSubtitle}
+                        </p>
                     </div>
-
-                    <button
-                        onClick={() => setLang(lang === 'fr' ? 'ar' : 'fr')}
-                        className="text-xs font-bold px-3 py-1.5 bg-[#EAF2ED] text-[#1E3A2B] rounded-full flex items-center gap-1.5 border border-[#1E3A2B]/15"
-                    >
-                        <Globe size={13} />
-                        <span>{lang === 'fr' ? 'العربية' : 'FR'}</span>
-                    </button>
                 </div>
-            </header>
 
-            {/* 2. Hero Header */}
-            <div className="py-10 px-4 text-center max-w-2xl mx-auto space-y-3">
-        <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D97706] bg-[#D97706]/10 px-3.5 py-1.5 rounded-full inline-block">
-          {isAr ? 'جميع منتجاتنا' : 'Tous Nos Produits'}
-        </span>
-                <h2 className="text-2xl sm:text-4xl font-extrabold leading-tight">
-                    {isAr ? 'وصفاتنا الطبيعية المصنوعة بكل حب' : 'Nos 6 Recettes Gourmandes & Artisanales'}
-                </h2>
-            </div>
+                {/* 2. All Products Grid */}
+                <section className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
+                    {PRODUCTS.map((prod: any, index: number) => {
+                        const name = lang === 'ar' ? prod.nameAr : prod.nameFr;
 
-            {/* 3. Products Grid with Benefits & Order Button */}
-            <main className="max-w-6xl mx-auto px-4 pb-16">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {ALL_PRODUCTS.map((prod) => (
-                        <div
-                            key={prod.id}
-                            className="bg-white border border-[#1E3A2B]/15 rounded-3xl p-5 shadow-xs flex flex-col justify-between hover:border-[#1E3A2B]/40 transition duration-300 group"
-                        >
-                            <div>
-                                <div
-                                    onClick={() => setViewModalProduct(prod)}
-                                    className="relative bg-[#F4EFEA] rounded-2xl p-4 mb-4 flex items-center justify-center h-48 cursor-pointer overflow-hidden"
-                                >
-                                    <img
-                                        src={prod.image}
-                                        alt={prod.nameFr}
-                                        className="max-h-40 object-contain group-hover:scale-105 transition duration-500"
-                                    />
-                                    <span className="absolute top-3 right-3 text-[10px] font-bold bg-[#1E3A2B] text-white px-2.5 py-1 rounded-full shadow-2xs">
-                    {isAr ? prod.badgeAr : prod.badgeFr}
-                  </span>
-                                </div>
+                        return (
+                            <motion.div
+                                key={prod.id}
+                                initial={{ opacity: 0, y: 15 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                viewport={{ once: true }}
+                                transition={{ duration: 0.3, delay: index * 0.04 }}
+                                className="bg-white border border-[#1E3A2B]/10 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 flex flex-col justify-between shadow-2xs hover:shadow-xs hover:border-[#1E3A2B]/30 transition duration-300 group"
+                            >
+                                <div>
+                                    <div
+                                        onClick={() => setViewProduct(prod)}
+                                        className="relative rounded-lg sm:rounded-xl overflow-hidden h-36 sm:h-52 mb-2 sm:mb-3 bg-[#F4EFEA]/60 p-2 flex items-center justify-center cursor-pointer"
+                                    >
+                                        <img
+                                            src={prod.image}
+                                            alt={name}
+                                            className="w-full h-full object-contain group-hover:scale-105 transition duration-500"
+                                        />
 
-                                <div className="flex items-start justify-between gap-2 mb-3">
-                                    <div>
-                                        <span className="text-[10px] text-slate-400 font-bold block">{prod.weight}</span>
-                                        <h3 className="text-base font-extrabold text-[#1E3A2B]">
-                                            {isAr ? prod.nameAr : prod.nameFr}
-                                        </h3>
+                                        <div className="absolute inset-0 bg-black/15 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
+                                            <span className="px-2.5 py-1 rounded-lg bg-white/90 backdrop-blur-xs text-[#1E3A2B] text-[10px] font-bold shadow-2xs flex items-center gap-1">
+                                                <Eye size={12} /> {lang === 'ar' ? 'التفاصيل' : 'Détails'}
+                                            </span>
+                                        </div>
                                     </div>
-                                    <span className="text-lg font-black text-[#D97706] shrink-0">{prod.price} DH</span>
+
+                                    <h2
+                                        onClick={() => setViewProduct(prod)}
+                                        className="text-[11px] sm:text-sm font-bold text-[#1E3A2B] cursor-pointer hover:text-[#D97706] transition line-clamp-1 leading-snug"
+                                    >
+                                        {name}
+                                    </h2>
                                 </div>
 
-                                {/* Benefits */}
-                                <div className="space-y-2 border-t border-slate-100 pt-3 mb-4">
-                                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#1E3A2B] flex items-center gap-1">
-                                        <Sparkles size={12} className="text-[#D97706]" />
-                                        <span>{isAr ? 'أهم المنافع:' : 'Bienfaits clés:'}</span>
-                                    </h4>
-                                    <ul className="space-y-1.5">
-                                        {(isAr ? prod.benefitsAr : prod.benefitsFr).map((b, i) => (
-                                            <li key={i} className="flex items-start gap-1.5 text-xs text-slate-600 font-medium">
-                                                <CheckCircle2 size={14} className="text-emerald-600 shrink-0 mt-0.5" />
-                                                <span>{b}</span>
-                                            </li>
-                                        ))}
-                                    </ul>
+                                <div className="mt-2.5 sm:mt-3 border-t border-[#1E3A2B]/10 pt-2 sm:pt-3 flex items-center justify-between gap-1">
+                                    <div className="flex flex-col">
+                                        {prod.oldPrice && (
+                                            <span className="text-[9px] sm:text-[11px] text-slate-400 line-through font-semibold -mb-0.5">
+                                                {prod.oldPrice} DH
+                                            </span>
+                                        )}
+                                        <span className="text-xs sm:text-base font-extrabold text-[#D97706]">
+                                            {prod.price} DH
+                                        </span>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setOrderProduct(prod)}
+                                        className="px-2 py-1.2 sm:px-3.5 sm:py-2 bg-[#1E3A2B] hover:bg-[#D97706] text-white font-bold rounded-lg sm:rounded-xl transition flex items-center gap-1 text-[9px] sm:text-[11px] shadow-2xs active:scale-95 cursor-pointer shrink-0"
+                                    >
+                                        <ShoppingBag size={12} />
+                                        <span>{t.buyBtn}</span>
+                                    </button>
                                 </div>
-                            </div>
+                            </motion.div>
+                        );
+                    })}
+                </section>
 
-                            {/* Order Buttons */}
-                            <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
-                                <button
-                                    onClick={() => setViewModalProduct(prod)}
-                                    className="p-3 text-slate-600 hover:text-[#1E3A2B] bg-slate-100 hover:bg-slate-200 rounded-xl transition"
-                                    title="Voir détails"
-                                >
-                                    <Eye size={16} />
-                                </button>
-                                <button
-                                    onClick={() => setSelectedProduct(prod)}
-                                    className="flex-1 bg-[#1E3A2B] hover:bg-[#D97706] text-white font-extrabold py-3 px-4 rounded-xl transition flex items-center justify-center gap-2 text-xs shadow-xs active:scale-95 cursor-pointer"
-                                >
-                                    <ShoppingBag size={15} />
-                                    <span>{isAr ? 'طلب سريع (COD)' : 'Commander (COD)'}</span>
-                                </button>
-                            </div>
+                {/* 3. Testimonials Section (Avis Clients) */}
+                <TestimonialsSection t={t} lang={lang} />
 
-                        </div>
-                    ))}
-                </div>
             </main>
 
-            {/* 4. Avis Clients Section (خلفية خضراء خفيفة) */}
-            <section className="py-14 bg-[#EAF2ED] border-t border-[#1E3A2B]/15">
-                <div className="max-w-6xl mx-auto px-4">
+            {/* 4. Footer */}
+            <Footer t={t} lang={lang} />
 
-                    <div className="text-center max-w-xl mx-auto mb-10 space-y-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#1E3A2B] bg-white border border-[#1E3A2B]/20 px-3 py-1 rounded-full inline-block shadow-2xs">
-              {isAr ? 'آراء زبنائنا الكرام' : 'Avis Clients Vérifiés'}
-            </span>
-                        <h3 className="text-2xl font-extrabold text-[#1E3A2B]">
-                            {isAr ? 'ماذا يقول عُشّاق maison fakia؟' : 'Ce Que Disent Nos Clients'}
-                        </h3>
-                    </div>
+            {/* Modals & Live Sales */}
+            <LiveSalesNotification lang={lang} />
 
-                    <div className="grid md:grid-cols-3 gap-5">
-                        {[
-                            {
-                                name: 'سارة أ.',
-                                city: 'الدار البيضاء',
-                                textAr: 'جرانولا أملو وأركان غزيييالة بزاف ومقرمشة! ولادي عجباتهم فـ الفطور، والطلب وصلني فـ أقل من 24 ساعة.',
-                                textFr: 'Le Granola Amlou & Argan est simplement délicieux ! Mes enfants l\'adorent au petit-déjeuner. Livraison très rapide à Casa.',
-                                rating: 5,
-                            },
-                            {
-                                name: 'Dr. Mehdi K.',
-                                city: 'الرباط',
-                                textAr: 'كمختص فـ التغذية، كنشجع على هاد السناكات الطبيعية. عسل حر بدون سكر مضاف ومكونات بلدية ممتازة.',
-                                textFr: 'En tant que nutritionniste, je recommande vivement ces snacks. Ingrédients naturels, miel pur et aucun sucre raffiné.',
-                                rating: 5,
-                            },
-                            {
-                                name: 'إلهام م.',
-                                city: 'مراكش',
-                                textAr: 'باك تريو اقتصادي جاني بـ 210 درهم وتوصيل فابور! النكهات بـ 3 بيهم حارين ولذاذ.',
-                                textFr: 'Le Pack Trio est super avantageux à 210 DH avec livraison gratuite. Les 3 saveurs sont excellentes !',
-                                rating: 5,
-                            },
-                        ].map((rev, idx) => (
-                            <div
-                                key={idx}
-                                className="bg-white p-5 rounded-2xl border border-[#1E3A2B]/10 shadow-xs flex flex-col justify-between space-y-3"
-                            >
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-1 text-[#D97706]">
-                                        {[...Array(rev.rating)].map((_, i) => (
-                                            <Star key={i} size={14} fill="currentColor" />
-                                        ))}
-                                    </div>
-                                    <p className="text-xs text-[#1E3A2B]/90 font-medium leading-relaxed italic">
-                                        "{isAr ? rev.textAr : rev.textFr}"
-                                    </p>
-                                </div>
+            <ProductDetailModal
+                product={viewProduct}
+                onClose={() => setViewProduct(null)}
+                onOrder={(prod: any) => {
+                    setViewProduct(null);
+                    setOrderProduct(prod);
+                }}
+                lang={lang}
+            />
 
-                                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                                    <span className="text-xs font-bold text-[#1E3A2B]">{rev.name}</span>
-                                    <span className="text-[10px] font-semibold text-slate-400">{rev.city}</span>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+            <CodModal
+                product={orderProduct}
+                onClose={() => setOrderProduct(null)}
+                t={t}
+                lang={lang}
+            />
 
-                </div>
-            </section>
-
-            {/* Footer */}
-            <footer className="bg-[#1E3A2B] text-white py-8 text-center text-xs">
-                <p>© {new Date().getFullYear()} Maison Fakia. Tous droits réservés.</p>
-            </footer>
-
-            {/* Modals */}
-            {selectedProduct && (
-                <CodModal
-                    product={selectedProduct}
-                    isOpen={!!selectedProduct}
-                    onClose={() => setSelectedProduct(null)}
-                    lang={lang}
-                />
-            )}
-
-            {viewModalProduct && (
-                <ProductDetailModal
-                    product={viewModalProduct}
-                    onClose={() => setViewModalProduct(null)}
-                    onOrder={(prod: any) => {
-                        setViewModalProduct(null);
-                        setSelectedProduct(prod);
-                    }}
-                    lang={lang}
-                />
-            )}
-
+            <WhatsAppButton lang={lang} />
         </div>
     );
 }

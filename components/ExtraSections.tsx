@@ -1,146 +1,178 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, ChevronLeft, ChevronRight, CheckCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-/* =====================================================================
-   1. TESTIMONIALS SECTION (EDGE-TO-EDGE BEIGE BACKGROUND)
-   ===================================================================== */
-export function TestimonialsSection({ lang = 'fr' }: { lang?: string }) {
-    const [activeTab, setActiveTab] = useState(0);
+// 1. SECTION AVIS CLIENTS (Softer Warm White Text Edition)
+export function TestimonialsSection({ lang = 'fr', t }: { lang?: string; t?: any }) {
+    const isAr = lang === 'ar';
 
-    const ugcFeedbacks = [
+    const reviews = [
         {
-            name: lang === 'ar' ? 'أمينة من الرباط' : 'Amina (Rabat)',
-            time: '14:23',
-            text: lang === 'ar'
-                ? 'سلام خويا، وصلني الباك Trio اليوم. تبارك الله القرمشة ديال العسل واللوز طوب! والعيد قريب عاود نكواندي 😋'
-                : 'Bonjour! J ai bien reçu le Pack Trio aujourd hui. Le granola Miel & Amandes est juste délicieux et hyper croustillant! 👍',
-            product: lang === 'ar' ? 'جرانولا العسل واللوز' : 'Granola Miel & Amandes',
-            image: '/doypack_miel_amandes.png',
+            name: 'Sarah A.',
+            city: 'Casablanca',
+            cityAr: 'الدار البيضاء',
+            productFr: 'Adepte du Granola Amlou & Argan',
+            productAr: 'عاشقة لجرانولا أملو وأركان',
+            image: 'https://images.unsplash.com/photo-1519676867240-f03562e64548?auto=format&fit=crop&w=800&q=80',
+            textAr: 'أحسن جرانولا جربت فالمغرب! الريحة ديال أملو وزيت الأركان البلدي كتشهي منين كتحل الباك.',
+            textFr: 'L\'odeur de l\'Amlou artisanal dès l\'ouverture du Doypack est magique. Un vrai régal sain pour toute la famille.',
         },
         {
-            name: lang === 'ar' ? 'كريم من الدار البيضاء' : 'Karim (Casablanca)',
-            time: '18:45',
-            text: lang === 'ar'
-                ? 'تبارك الله عليكم، جربت الجرانولا د الشوكولاتة السوداء مع الياغورت فالفطور، طاقة عجيبة ديال السبور! 💪'
-                : 'Franchement bravo! Le Granola Chocolat Noir avec le yaourt le matin c est le top pour le sport.',
-            product: lang === 'ar' ? 'جرانولا الشوكولاتة السوداء' : 'Granola Chocolat Noir',
-            image: '/doypack_chocolat_noir.png',
+            name: 'Ilham M.',
+            city: 'Marrakech',
+            cityAr: 'مراكش',
+            productFr: 'Consommatrice du Pack Trio',
+            productAr: 'زبونة جربت باك تريو',
+            image: 'https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=800&q=80',
+            textAr: 'باك تريو جاني ممتاز ومقرمش! النكهات بثلاثة بيهم لُذاذ بزاف وبدون سكر مضاف. التوصيل كان سريع لمراكش.',
+            textFr: 'Le Pack Trio est d\'une fraîcheur incroyable. Le mélange Amlou & Argan est devenu mon petit-déjeuner quotidien.',
         },
         {
-            name: lang === 'ar' ? 'فاطمة الزهراء من مراكش' : 'Fatima-Zohra (Marrakech)',
-            time: '11:10',
-            text: lang === 'ar'
-                ? 'التوصيل سريع وصلاتني فالوقت، والأهم الأملو وأركان كيبان حر 100%. شكراً بزاف على الجودة 👌'
-                : 'Livraison très rapide en 24h et la qualité Amlou & Argan est au rendez-vous. Merci beaucoup!',
-            product: lang === 'ar' ? 'جرانولا أملو وأركان' : 'Granola Amlou & Argan',
-            image: '/doypack_amlou_argan.png',
-        }
+            name: 'Dr. Mehdi K.',
+            city: 'Rabat',
+            cityAr: 'الرباط',
+            productFr: 'Amateur du Granola Miel & Amandes',
+            productAr: 'عاشق لجرانولا العسل واللوز',
+            image: 'https://images.unsplash.com/photo-1590080875515-8a3a8dc5735e?auto=format&fit=crop&w=800&q=80',
+            textAr: 'كمختص في التغذية، كنقدر بزاف الجودة ديال المكونات الطبيعية والعسل الحر. سناك صحي ومغذي للرياضة والعمل.',
+            textFr: 'En tant que professionnel de santé, je valide à 100% la composition. Du miel pur, des amandes de qualité et aucun additif.',
+        },
     ];
 
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    // Auto Slider كل 5 ثواني
     useEffect(() => {
         const timer = setInterval(() => {
-            setActiveTab((prev) => (prev + 1) % ugcFeedbacks.length);
-        }, 5500);
+            setCurrentIndex((prev) => (prev + 1) % reviews.length);
+        }, 5000);
         return () => clearInterval(timer);
-    }, [ugcFeedbacks.length]);
+    }, [reviews.length]);
+
+    const handleNext = () => {
+        setCurrentIndex((prev) => (prev + 1) % reviews.length);
+    };
+
+    const handlePrev = () => {
+        setCurrentIndex((prev) => (prev - 1 + reviews.length) % reviews.length);
+    };
+
+    const currentReview = reviews[currentIndex];
 
     return (
-        /* EDGE-TO-EDGE FULL-WIDTH BG */
-        <section className="w-full bg-[#F4EFEA] py-16 px-4 sm:px-6 border-t border-[#1E3A2B]/10">
-            <div className="max-w-5xl mx-auto space-y-8">
+        <section className="py-10 my-6 bg-[#1E3A2B] rounded-2xl border border-[#1E3A2B] text-slate-200 overflow-hidden shadow-md font-sans">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6">
 
-                {/* Title */}
-                <div className="text-center space-y-2">
-                    <div className="inline-flex items-center gap-1.5 text-[#D97706] text-xs font-bold uppercase tracking-widest">
-                        <MessageSquare size={14} />
-                        <span>{lang === 'ar' ? 'آراء الزبناء' : 'Avis Clients'}</span>
-                    </div>
-                    <h2 className="text-2xl sm:text-4xl font-extrabold text-[#1E3A2B]">
-                        {lang === 'ar' ? 'ماذا يقول زبناؤنا؟' : 'Ce que disent nos clients'}
+                {/* Sub-header Badge */}
+                <div className="text-center mb-6 space-y-1.5">
+                    <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-[#D97706] bg-white/10 px-3 py-0.5 rounded-full inline-block border border-white/10">
+                        {isAr ? 'شهادات موثوقة' : 'Avis & Expériences'}
+                    </span>
+                    <h2 className="text-lg sm:text-2xl font-bold tracking-tight text-slate-100">
+                        {isAr ? 'تجربة عُشّاق Maison Fakia' : 'L\'Art de Vivre Maison Fakia'}
                     </h2>
-                    <div className="w-12 h-0.5 bg-[#D97706] mx-auto rounded-full opacity-80" />
                 </div>
 
-                {/* Balanced Card */}
-                <div className="bg-white border border-[#1E3A2B]/10 rounded-2xl p-6 sm:p-10 shadow-sm relative">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={activeTab}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -8 }}
-                            transition={{ duration: 0.25 }}
-                            className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center"
-                        >
-                            {/* Product Image - Larger & Better Balanced */}
-                            <div className="md:col-span-5 flex justify-center">
-                                <div className="relative w-44 h-44 sm:w-52 sm:h-52 rounded-2xl bg-[#FDFBF7] p-4 border border-slate-100 flex items-center justify-center shadow-inner">
-                                    <Image
-                                        src={ugcFeedbacks[activeTab].image}
-                                        alt={ugcFeedbacks[activeTab].product}
-                                        width={180}
-                                        height={180}
-                                        className="object-contain max-h-40 sm:max-h-44 drop-shadow-md"
-                                    />
-                                </div>
-                            </div>
+                {/* Split Card Container */}
+                <div className="relative bg-white/5 border border-white/10 rounded-xl p-4 sm:p-5 backdrop-blur-xs">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
 
-                            {/* WhatsApp Message Content */}
-                            <div className="md:col-span-7 space-y-4">
-                                <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-                                    <div>
-                                        <span className="text-sm font-extrabold text-[#1E3A2B] block">{ugcFeedbacks[activeTab].name}</span>
-                                        <span className="text-xs text-slate-500 font-semibold">{ugcFeedbacks[activeTab].product}</span>
-                                    </div>
-                                    <span className="text-xs text-slate-400 font-medium">{ugcFeedbacks[activeTab].time}</span>
-                                </div>
-
-                                <div className="bg-[#EAF0E8] p-4 rounded-2xl border border-emerald-900/10 text-xs sm:text-sm text-slate-800 leading-relaxed font-medium shadow-2xs">
-                                    <p>"{ugcFeedbacks[activeTab].text}"</p>
-                                    <div className="flex justify-end items-center gap-1 mt-3 text-[10px] text-emerald-800 font-bold">
-                                        <span>{ugcFeedbacks[activeTab].time}</span>
-                                        <CheckCheck size={15} className="text-emerald-700" />
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </AnimatePresence>
-
-                    {/* Dots & Navigation */}
-                    <div className="flex justify-between items-center pt-6 border-t border-slate-100 mt-6">
-                        <div className="flex gap-2">
-                            {ugcFeedbacks.map((_, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => setActiveTab(idx)}
-                                    className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                                        activeTab === idx ? 'w-8 bg-[#D97706]' : 'w-2.5 bg-slate-200'
-                                    }`}
-                                    aria-label={`Slide ${idx + 1}`}
+                        {/* 1. Image Side */}
+                        <div className="md:col-span-5 relative h-48 sm:h-64 md:h-72 rounded-lg overflow-hidden shadow-xs">
+                            <AnimatePresence mode="wait">
+                                <motion.img
+                                    key={currentReview.image}
+                                    src={currentReview.image}
+                                    alt={currentReview.name}
+                                    initial={{ opacity: 0, scale: 1.03 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.97 }}
+                                    transition={{ duration: 0.5 }}
+                                    className="w-full h-full object-cover"
                                 />
-                            ))}
+                            </AnimatePresence>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+                            {/* Top Clean Badge */}
+                            <div className="absolute top-2.5 left-2.5 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/20 text-[9px] font-bold text-slate-200 tracking-widest uppercase">
+                                {isAr ? 'فطور صحي' : 'Petit-Déjeuner'}
+                            </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setActiveTab((prev) => (prev > 0 ? prev - 1 : ugcFeedbacks.length - 1))}
-                                className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center text-[#1E3A2B] hover:bg-[#D97706] hover:text-white transition cursor-pointer"
-                                aria-label="Previous"
-                            >
-                                <ChevronLeft size={18} />
-                            </button>
-                            <button
-                                onClick={() => setActiveTab((prev) => (prev < ugcFeedbacks.length - 1 ? prev + 1 : 0))}
-                                className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center text-[#1E3A2B] hover:bg-[#D97706] hover:text-white transition cursor-pointer"
-                                aria-label="Next"
-                            >
-                                <ChevronRight size={18} />
-                            </button>
+                        {/* 2. Content Side */}
+                        <div className="md:col-span-7 flex flex-col justify-between h-full min-h-[220px] sm:min-h-[250px] space-y-4 px-1 sm:px-2">
+                            <AnimatePresence mode="wait">
+                                <motion.div
+                                    key={currentIndex}
+                                    initial={{ opacity: 0, x: 15 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -15 }}
+                                    transition={{ duration: 0.4 }}
+                                    className="space-y-3"
+                                >
+                                    {/* Quotation Mark */}
+                                    <div className="text-[#D97706]/70 text-4xl sm:text-5xl font-bold leading-none select-none -mb-2">
+                                        “
+                                    </div>
+
+                                    {/* Quote Text - Softer Off-White (slate-200) */}
+                                    <p className="text-base sm:text-lg font-medium leading-relaxed text-slate-200/90 pr-2">
+                                        {isAr ? currentReview.textAr : currentReview.textFr}
+                                    </p>
+
+                                    {/* Customer Info */}
+                                    <div className="pt-3 border-t border-white/10">
+                                        <h3 className="text-xs sm:text-sm font-bold text-slate-100 tracking-wide">
+                                            {currentReview.name}
+                                        </h3>
+                                        <p className="text-[11px] text-[#D97706] font-semibold mt-0.5">
+                                            {isAr ? currentReview.productAr : currentReview.productFr} — <span className="text-slate-300/80 font-medium">{isAr ? currentReview.cityAr : currentReview.city}</span>
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            </AnimatePresence>
+
+                            {/* Navigation Controls */}
+                            <div className="pt-2 border-t border-white/10 flex items-center justify-between">
+                                {/* Dots */}
+                                <div className="flex items-center gap-1.5">
+                                    {reviews.map((_, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setCurrentIndex(idx)}
+                                            className={`h-1 rounded-full transition-all duration-300 ${
+                                                idx === currentIndex
+                                                    ? 'w-6 bg-[#D97706]'
+                                                    : 'w-1.5 bg-white/20 hover:bg-white/50'
+                                            }`}
+                                            aria-label={`Go to slide ${idx + 1}`}
+                                        />
+                                    ))}
+                                </div>
+
+                                {/* Arrows */}
+                                <div className="flex items-center gap-1.5">
+                                    <button
+                                        onClick={handlePrev}
+                                        className="p-1.5 rounded-full border border-white/15 hover:border-white/40 hover:bg-white/5 text-slate-200 transition active:scale-95 cursor-pointer"
+                                        aria-label="Previous slide"
+                                    >
+                                        <ChevronLeft size={14} />
+                                    </button>
+                                    <button
+                                        onClick={handleNext}
+                                        className="p-1.5 rounded-full border border-white/15 hover:border-white/40 hover:bg-white/5 text-slate-200 transition active:scale-95 cursor-pointer"
+                                        aria-label="Next slide"
+                                    >
+                                        <ChevronRight size={14} />
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
+
                     </div>
                 </div>
 
@@ -149,14 +181,12 @@ export function TestimonialsSection({ lang = 'fr' }: { lang?: string }) {
     );
 }
 
-/* =====================================================================
-   2. FOOTER (EDGE-TO-EDGE FULL WIDTH)
-   ===================================================================== */
+// 2. FOOTER (EDGE-TO-EDGE FULL WIDTH)
 export function Footer({ lang = 'fr' }: { lang?: string }) {
     return (
         <footer className="w-full bg-[#FDFBF7] text-[#1E3A2B] border-t border-[#1E3A2B]/10 py-10 px-4 font-sans">
             <div className="max-w-xl mx-auto flex flex-col items-center justify-center text-center space-y-3">
-                <h3 className="text-xl font-light tracking-[0.25em] text-[#1E3A2B] uppercase font-serif">
+                <h3 className="text-xl font-light tracking-[0.25em] text-[#1E3A2B] uppercase">
                     Maison Fakia
                 </h3>
                 <p className="text-xs text-[#1E3A2B]/70 font-medium max-w-sm leading-relaxed">

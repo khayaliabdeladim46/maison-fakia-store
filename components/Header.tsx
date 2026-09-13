@@ -1,13 +1,33 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Globe } from 'lucide-react';
 
 export default function Header({ lang, setLang, t }: any) {
-    return (
-        <header className="sticky top-0 z-40 bg-[#FDFBF7]/90 backdrop-blur-md border-b border-[#1E3A2B]/10">
+    const [isScrolled, setIsScrolled] = useState(false);
 
-            {/* Top Banner - Subtle & Clean */}
-            <div className="bg-[#1E3A2B] text-[#FDFBF7] py-1 px-4 text-[10px] sm:text-[11px] font-light text-center tracking-wide">
+    // Detect Scroll position to hide/show Top Banner
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 30) {
+                setIsScrolled(true);
+            } else {
+                setIsScrolled(false);
+            }
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    return (
+        <header className="fixed top-0 left-0 w-full z-50 bg-[#FDFBF7]/95 backdrop-blur-md border-b border-[#1E3A2B]/10 shadow-2xs transition-all duration-300">
+
+            {/* Top Banner - Hides automatically on scroll */}
+            <div
+                className={`bg-[#1E3A2B] text-[#FDFBF7] text-[10px] sm:text-[11px] font-light text-center tracking-wide overflow-hidden transition-all duration-300 ease-in-out ${
+                    isScrolled ? 'max-h-0 py-0 opacity-0' : 'max-h-12 py-1.5 px-4 opacity-100'
+                }`}
+            >
                 <p className="max-w-7xl mx-auto">
                     {lang === 'ar'
                         ? 'توصيل سريع بجميع المدن المغربية (24h - 48h) • الدفع عند الاستلام'
@@ -15,18 +35,18 @@ export default function Header({ lang, setLang, t }: any) {
                 </p>
             </div>
 
-            {/* Main Navbar */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between relative">
+            {/* Main Navbar - Always fixed & clean */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between relative">
 
                 {/* Left Spacer for symmetry */}
                 <div className="w-20 hidden sm:block"></div>
 
                 {/* Center: Luxury Minimalist Logo */}
                 <div className="text-center mx-auto sm:mx-0 sm:absolute sm:left-1/2 sm:-translate-x-1/2">
-                    <a href="#" className="inline-block group">
-            <span className="text-lg sm:text-2xl font-serif tracking-[0.25em] text-[#1E3A2B] uppercase font-bold">
-              MAISON <span className="text-[#D97706] font-normal">FAKIA</span>
-            </span>
+                    <a href="/" className="inline-block group">
+                        <span className="text-lg sm:text-2xl font-serif tracking-[0.25em] text-[#1E3A2B] uppercase font-bold">
+                            MAISON <span className="text-[#D97706] font-normal">FAKIA</span>
+                        </span>
                     </a>
                 </div>
 

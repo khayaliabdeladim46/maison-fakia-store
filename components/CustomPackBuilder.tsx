@@ -1,188 +1,207 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, ShoppingBag, X, ChevronLeft, ChevronRight, Clock, RotateCcw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { PRODUCTS } from '../lib/products';
+import { useState } from 'react';
+import { Plus, Check, ShoppingBag, Trash2 } from 'lucide-react';
 
-export default function CustomPackBuilder({ onOrderCustomPack, t, lang }: any) {
-    const [selectedPack, setSelectedPack] = useState<any[]>([]);
-    const [startIndex, setStartIndex] = useState(0);
+const PACK_OPTIONS = [
+    { id: 'miel-amandes', nameFr: 'Granola Miel & Amandes', nameAr: 'جرانولا العسل واللوز', image: '/doypack_miel_amandes.png' },
+    { id: 'chocolat-noir', nameFr: 'Granola Chocolat Noir', nameAr: 'جرانولا الشوكولاتة السوداء', image: '/doypack_chocolat_noir.png' },
+    { id: 'amlou-argan', nameFr: 'Granola Amlou & Argan', nameAr: 'جرانولا أملو وزيت الأركان', image: '/doypack_amlou_argan.png' },
+    { id: 'mix-energie', nameFr: 'Mix Fruits Secs Énergie', nameAr: 'فواكه جافة مشكلة طاقة', image: '/doypack_fruits_secs.png' },
+    { id: 'energy-balls', nameFr: 'Energy Balls Dattes & Noix', nameAr: 'كرات الطاقة بالتمر والجوز', image: '/doypack_energy_balls.png' },
+    { id: 'pro-sport', nameFr: 'Granola Pro-Sport Protéiné', nameAr: 'جرانولا بروتين للرياضيين', image: '/doypack_pro_sport.png' },
+];
 
-    // Countdown Timer State
-    const [timeLeft, setTimeLeft] = useState({ hours: 4, minutes: 28, seconds: 15 });
+export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }: any) {
+    const isAr = lang === 'ar';
+    const [selectedItems, setSelectedItems] = useState<any[]>([]);
 
-    useEffect(() => {
-        const timer = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-                if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-                if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-                return { hours: 4, minutes: 30, seconds: 0 };
-            });
-        }, 1000);
-        return () => clearInterval(timer);
-    }, []);
-
-    const addFlavor = (prod: any) => {
-        if (selectedPack.length >= 3) return;
-        setSelectedPack([...selectedPack, prod]);
+    const addItem = (item: any) => {
+        if (selectedItems.length < 3) {
+            setSelectedItems([...selectedItems, item]);
+        }
     };
 
     const removeItem = (index: number) => {
-        setSelectedPack(selectedPack.filter((_, i) => i !== index));
+        const newItems = [...selectedItems];
+        newItems.splice(index, 1);
+        setSelectedItems(newItems);
     };
 
-    const clearAll = () => {
-        setSelectedPack([]);
-    };
-
-    const handleNext = () => {
-        if (startIndex + 3 < PRODUCTS.length) setStartIndex(startIndex + 1);
-        else setStartIndex(0);
-    };
-
-    const handlePrev = () => {
-        if (startIndex > 0) setStartIndex(startIndex - 1);
-        else setStartIndex(PRODUCTS.length - 3);
-    };
+    const isFull = selectedItems.length === 3;
+    const progressPercentage = (selectedItems.length / 3) * 100;
 
     const handleOrder = () => {
-        if (selectedPack.length < 3) {
-            return alert(lang === 'ar' ? 'المرجو اختيار 3 أكياس لإكمال العلبة' : 'Veuillez choisir 3 sachets pour compléter le pack');
-        }
-        onOrderCustomPack({
-            name: lang === 'ar' ? 'علبة ثلاثية 1.5 KG (3 أكياس x 500g)' : 'Pack Trio 1.5 KG (3 Sachets x 500g)',
+        if (!isFull) return;
+        const packObj = {
+            id: 'pack-trio-custom',
+            nameFr: `Pack Trio Sur-Mesure (${selectedItems.map(i => i.nameFr).join(' + ')})`,
+            nameAr: `باك تريو حسب الاختيار (${selectedItems.map(i => i.nameAr).join(' + ')})`,
             price: 210,
-        });
+            image: selectedItems[0]?.image || '/doypack_3_flavors_lineup.png',
+            isPack: true,
+            items: selectedItems,
+        };
+        onOrderCustomPack(packObj);
     };
 
-    const visibleProducts = PRODUCTS.slice(startIndex, startIndex + 3);
-
     return (
-        <section id="custom-pack" className="py-10 my-10 bg-[#1E3A2B] dark:bg-[#08120D] text-[#FDFBF7] rounded-2xl p-6 md:p-8 shadow-xl border border-emerald-900/40 transition-colors duration-300">
+        <section className="py-8 sm:py-10 bg-[#1E3A2B] text-white rounded-2xl sm:rounded-3xl border border-[#1E3A2B] p-3.5 sm:p-8 my-6 sm:my-8 shadow-md font-sans">
+            <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6">
 
-            {/* Header Badges & Countdown */}
-            <div className="max-w-2xl mx-auto text-center space-y-2.5 mb-6">
-                <div className="flex items-center justify-center gap-2 flex-wrap">
-          <span className="px-3.5 py-1 bg-[#D97706] text-white font-bold text-[10px] rounded-full uppercase tracking-widest inline-block shadow-xs">
-            {t.packBadge}
+                {/* Header */}
+                <div className="text-center space-y-1.5">
+          <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-[#D97706] bg-white/10 px-2.5 py-0.5 rounded-full inline-block border border-white/15">
+            {isAr ? 'عرض خاص • 3 بـ 210 درهم' : 'Offre Spéciale • 3 Pour 210 DH'}
           </span>
-
-                    <span className="px-3 py-1 bg-[#152B1E] text-amber-200 font-bold text-[10px] rounded-full border border-emerald-700/50 flex items-center gap-1 shadow-xs">
-            <Clock size={11} className="text-amber-300" />
-            <span>{String(timeLeft.hours).padStart(2, '0')}h : {String(timeLeft.minutes).padStart(2, '0')}m : {String(timeLeft.seconds).padStart(2, '0')}s</span>
-          </span>
+                    <h2 className="text-xl sm:text-3xl font-extrabold text-white">
+                        {isAr ? 'صوب الباك ديالك (تريو 1.5 كجم)' : 'Composez Votre Pack Trio (3 x 500g)'}
+                    </h2>
+                    <p className="text-[11px] sm:text-xs text-slate-300 font-medium max-w-md mx-auto leading-relaxed">
+                        {isAr ? 'اختار 3 أكياس من أذواقك المفضلين واستافد من توصيل فابور بـ 210 درهم فقط' : 'Choisissez 3 sachets de votre choix et bénéficiez de la livraison gratuite à 210 DH.'}
+                    </p>
                 </div>
 
-                <h2 className="text-xl md:text-2xl font-bold text-white tracking-normal">{t.packTitle}</h2>
-
-                <p className="text-xs text-[#F4EFEA]/80 font-medium leading-relaxed max-w-lg mx-auto">
-                    {t.packSub}
-                </p>
-            </div>
-
-            {/* Selected Slots Bar */}
-            <div className="max-w-md mx-auto bg-[#152B1E] dark:bg-[#0D1C14] border border-emerald-800/40 rounded-xl p-3.5 mb-6 shadow-inner">
-                <div className="flex justify-between items-center mb-2.5 text-xs font-bold border-b border-emerald-800/40 pb-2 text-[#FDFBF7]">
-                    <span>{t.selectedLabel}</span>
-                    <div className="flex items-center gap-3">
-            <span className="text-[#D97706] font-bold text-sm">
-              {selectedPack.length}/3 {lang === 'ar' ? 'أكياس (500g)' : 'Sachets (500g)'}
+                {/* Progress Bar & Header */}
+                <div className="max-w-xl mx-auto space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-slate-200 px-0.5">
+            <span>
+              {isAr ? `الأكياس المختارة (${selectedItems.length}/3)` : `Sachets sélectionnés (${selectedItems.length}/3)`}
             </span>
+                        <span className="text-[#D97706] text-[10px] sm:text-[11px] font-extrabold">
+              {isFull
+                  ? (isAr ? 'باك مكتمل 100%' : 'Pack Complété 100%')
+                  : `${Math.round(progressPercentage)}%`}
+            </span>
+                    </div>
 
-                        {selectedPack.length > 0 && (
-                            <button
-                                onClick={clearAll}
-                                className="text-[10px] text-red-300 hover:text-white flex items-center gap-1 bg-red-950/40 hover:bg-red-900/80 px-2 py-0.5 rounded-md border border-red-800/40 transition"
-                            >
-                                <RotateCcw size={10} /> {lang === 'ar' ? 'مسح' : 'Vider'}
-                            </button>
-                        )}
+                    {/* Progress Bar */}
+                    <div className="w-full bg-white/15 h-2 rounded-full overflow-hidden border border-white/10">
+                        <div
+                            className="bg-[#D97706] h-full transition-all duration-500 ease-out rounded-full shadow-xs"
+                            style={{ width: `${progressPercentage}%` }}
+                        />
                     </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5">
-                    {[0, 1, 2].map((idx) => {
-                        const item = selectedPack[idx];
+                {/* 3 Slots (Mobile Responsive) */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 max-w-xl mx-auto">
+                    {[0, 1, 2].map((slotIndex) => {
+                        const item = selectedItems[slotIndex];
                         return (
-                            <div key={idx} className="h-22 rounded-xl border border-dashed border-emerald-700/40 flex flex-col items-center justify-center p-2 text-center relative bg-[#1B3626] dark:bg-[#12241A]">
+                            <div
+                                key={slotIndex}
+                                className={`relative rounded-xl sm:rounded-2xl p-2 sm:p-3 flex flex-col items-center justify-center text-center transition-all duration-300 min-h-[105px] sm:min-h-[125px] ${
+                                    item
+                                        ? 'bg-white text-[#1E3A2B] border-2 border-[#D97706] shadow-md'
+                                        : 'border-2 border-dashed border-white/30 bg-white/5'
+                                }`}
+                            >
                                 {item ? (
-                                    <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="flex flex-col items-center">
-                                        <img src={item.image} alt="" className="w-9 h-9 rounded-full object-cover mb-1 border border-[#D97706]" />
-                                        <span className="text-[9px] font-bold text-white line-clamp-1">{lang === 'ar' ? item.nameAr : item.nameFr}</span>
-                                        <span className="text-[8px] text-[#FDFBF7]/70 font-semibold">500g</span>
-                                        <button onClick={() => removeItem(idx)} className="absolute -top-1.5 -right-1.5 bg-[#1E3A2B] text-white border border-emerald-700 rounded-full p-0.5 hover:bg-red-600 transition">
-                                            <X size={10} />
+                                    <>
+                                        <button
+                                            onClick={() => removeItem(slotIndex)}
+                                            className="absolute -top-1.5 -right-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 shadow-xs transition active:scale-95 cursor-pointer"
+                                            title={isAr ? 'مسح هاد المنتج' : 'Supprimer'}
+                                        >
+                                            <Trash2 size={11} />
                                         </button>
-                                    </motion.div>
+                                        <img src={item.image} alt={item.nameFr} className="w-9 h-9 sm:w-12 sm:h-12 object-contain mb-1" />
+                                        <span className="text-[9px] sm:text-[11px] font-bold text-[#1E3A2B] leading-tight line-clamp-2">
+                      {isAr ? item.nameAr : item.nameFr}
+                    </span>
+                                        <span className="text-[8px] sm:text-[9px] text-slate-500 font-semibold mt-0.5">(500g)</span>
+                                    </>
                                 ) : (
-                                    <span className="text-[9px] text-emerald-300/40 font-semibold">+ {lang === 'ar' ? `كيس 500g (${idx + 1})` : `Sachet 500g (${idx + 1})`}</span>
+                                    <div className="space-y-1 text-slate-300">
+                                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border border-dashed border-white/40 flex items-center justify-center mx-auto text-[10px] sm:text-xs font-bold text-white/80">
+                                            {slotIndex + 1}
+                                        </div>
+                                        <span className="text-[9px] sm:text-[10px] font-bold block text-slate-300">
+                      {isAr ? `كيس ${slotIndex + 1}` : `Sachet ${slotIndex + 1}`}
+                    </span>
+                                    </div>
                                 )}
                             </div>
                         );
                     })}
                 </div>
-            </div>
 
-            {/* Product Carousel */}
-            <div className="relative max-w-3xl mx-auto mb-6 px-7">
-                <button
-                    onClick={handlePrev}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-[#152B1E] text-white border border-emerald-800/40 hover:bg-[#1C3A29] transition z-10"
-                >
-                    <ChevronLeft size={18} />
-                </button>
+                {/* Option Cards (Flex Vertical on Mobile to prevent squishing) */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 pt-1">
+                    {PACK_OPTIONS.map((opt) => {
+                        const countInPack = selectedItems.filter((i) => i.id === opt.id).length;
+                        const isSelected = countInPack > 0;
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <AnimatePresence mode="popLayout">
-                        {visibleProducts.map((prod) => {
-                            const name = lang === 'ar' ? prod.nameAr : prod.nameFr;
+                        return (
+                            <div
+                                key={opt.id}
+                                className={`border rounded-xl sm:rounded-2xl p-2 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-2 transition duration-200 ${
+                                    isSelected ? 'border-[#D97706] bg-white text-[#1E3A2B] shadow-xs' : 'border-white/15 bg-white/10 text-white'
+                                }`}
+                            >
+                                <div className="flex items-center gap-1.5 sm:gap-2 w-full sm:w-auto min-w-0">
+                                    <img src={opt.image} alt={opt.nameFr} className="w-8 h-8 sm:w-10 sm:h-10 object-contain shrink-0 bg-white/10 rounded-lg p-0.5" />
+                                    <div className="min-w-0 flex-1">
+                                        <h4 className={`text-[10px] sm:text-xs font-bold leading-tight line-clamp-1 ${isSelected ? 'text-[#1E3A2B]' : 'text-white'}`}>
+                                            {isAr ? opt.nameAr : opt.nameFr}
+                                        </h4>
+                                        <span className={`text-[8px] sm:text-[9px] font-medium block ${isSelected ? 'text-slate-500' : 'text-slate-300'}`}>500g</span>
+                                    </div>
+                                </div>
 
-                            return (
-                                <motion.div
-                                    key={prod.id}
-                                    layout
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="bg-[#152B1E] dark:bg-[#0D1C14] border border-emerald-800/30 rounded-xl p-3 flex flex-col justify-between shadow-xs"
+                                <button
+                                    onClick={() => addItem(opt)}
+                                    disabled={isFull}
+                                    className={`w-full sm:w-auto px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg text-[9px] sm:text-[10px] font-extrabold flex items-center justify-center gap-1 transition shrink-0 ${
+                                        isSelected
+                                            ? 'bg-emerald-700 text-white'
+                                            : isFull
+                                                ? 'bg-white/10 text-slate-400 cursor-not-allowed'
+                                                : 'bg-[#D97706] hover:bg-[#b56305] text-white active:scale-95'
+                                    }`}
                                 >
-                                    <img src={prod.image} alt={name} className="w-full h-24 object-cover rounded-lg mb-2 bg-[#1B3626] dark:bg-[#12241A]" />
-                                    <h4 className="text-[11px] font-bold text-white line-clamp-1">{name}</h4>
-                                    <p className="text-[9px] text-[#FDFBF7]/70 font-medium mb-2">Grand Format 500g</p>
-
-                                    {/* Button text updated to Choisir / اختيار instead of Ajouter */}
-                                    <button
-                                        onClick={() => addFlavor(prod)}
-                                        disabled={selectedPack.length >= 3}
-                                        className="w-full py-1.5 bg-[#D97706] hover:bg-[#B45309] text-white rounded-lg text-[10px] font-bold transition disabled:opacity-30 flex items-center justify-center gap-1"
-                                    >
-                                        <Plus size={12} /> {lang === 'ar' ? 'اختيار (500g)' : 'Choisir (500g)'}
-                                    </button>
-                                </motion.div>
-                            );
-                        })}
-                    </AnimatePresence>
+                                    {isSelected ? (
+                                        <>
+                                            <Check size={10} />
+                                            <span>{isAr ? `أضيف (${countInPack})` : `Ajouté (${countInPack})`}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Plus size={10} />
+                                            <span>{isAr ? 'اختيار' : 'Choisir'}</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        );
+                    })}
                 </div>
 
-                <button
-                    onClick={handleNext}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-[#152B1E] text-white border border-emerald-800/40 hover:bg-[#1C3A29] transition z-10"
-                >
-                    <ChevronRight size={18} />
-                </button>
-            </div>
+                {/* CTA Button */}
+                <div className="pt-2 text-center">
+                    <button
+                        onClick={handleOrder}
+                        disabled={!isFull}
+                        className={`w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-extrabold text-xs sm:text-sm transition duration-300 flex items-center justify-center gap-2 shadow-md mx-auto ${
+                            isFull
+                                ? 'bg-[#D97706] hover:bg-[#b56305] text-white cursor-pointer active:scale-95 shadow-orange-500/20'
+                                : 'bg-white/10 text-slate-400 cursor-not-allowed border border-white/10'
+                        }`}
+                    >
+                        <ShoppingBag size={15} />
+                        <span>
+              {isFull
+                  ? isAr
+                      ? 'طلب الباك الخاص بي (210 درهم + توصيل فابور) ←'
+                      : 'Commander mon Pack (210 DH - Livraison Gratuite) →'
+                  : isAr
+                      ? `اختار ${3 - selectedItems.length} أكياس أخرى لإكمال الباك`
+                      : `Sélectionnez encore ${3 - selectedItems.length} sachet(s)`}
+            </span>
+                    </button>
+                </div>
 
-            {/* Main CTA Button */}
-            <div className="text-center">
-                <button
-                    onClick={handleOrder}
-                    disabled={selectedPack.length < 3}
-                    className="px-8 py-3.5 bg-[#FDFBF7] text-[#1E3A2B] font-bold rounded-xl shadow-md hover:bg-white transition inline-flex items-center gap-2 text-xs disabled:opacity-40"
-                >
-                    <ShoppingBag size={15} /> {t.packCta} (210 DH)
-                </button>
             </div>
         </section>
     );
