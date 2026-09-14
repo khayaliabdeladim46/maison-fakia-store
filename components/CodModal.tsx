@@ -1,188 +1,156 @@
 'use client';
 
 import { useState } from 'react';
-import { X, CheckCircle2, Truck, Phone, User, MapPin, ShieldCheck, ShoppingBag } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { CheckCircle2, ShoppingBag, X } from 'lucide-react';
 
-export interface CodModalProps {
-    product: any;
-    isOpen?: boolean;
-    onClose: () => void;
-    lang?: 'fr' | 'ar';
-    t?: any;
-}
-
-export default function CodModal({ product, isOpen, onClose, lang = 'fr', t }: CodModalProps) {
+export default function CodModal({ product, onClose, t, lang = 'fr' }: any) {
+    const isAr = lang === 'ar';
     const [fullName, setFullName] = useState('');
     const [phone, setPhone] = useState('');
     const [city, setCity] = useState('');
-    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [address, setAddress] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
-    // التحكم فـ الظهور سواء بالـ isOpen أو بحضور الـ product
-    const shouldShow = isOpen !== undefined ? isOpen : !!product;
-    if (!shouldShow || !product) return null;
+    if (!product) return null;
 
-    // استخراج الاسم والوزن بأمان بلا أخطاء TypeScript
-    const nameStr = lang === 'ar'
-        ? (product.nameAr || product.title || product.name || 'منتج ميزون فاكهة')
-        : (product.nameFr || product.title || product.name || 'Pack Maison Fakia');
-
-    const weightStr = product.weight || (Array.isArray(product.weights) ? product.weights.join(', ') : product.weights) || '500g';
-
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!fullName.trim() || !phone.trim() || !city.trim()) return;
+        setLoading(true);
 
-        setIsSubmitted(true);
-        setTimeout(() => {
-            setIsSubmitted(false);
-            onClose();
-            setFullName('');
-            setPhone('');
-            setCity('');
-        }, 3000);
+        try {
+            // إرسال البيانات المباشر لـ Supabase
+            const { error } = await supabase.from('orders').insert([
+                {
+                    customer_name: fullName,
+                    phone: phone,
+                    city: city,
+                    address: address,
+                    product_name: isAr ? product.nameAr : product.nameFr,
+                    total_price: product.price,
+                    status: 'pending',
+                },
+            ]);
+
+            if (error) {
+                console.error('Supabase Error:', error);
+                alert(isAr ? 'خطأ فـ التسجيل: ' + error.message : 'Erreur: ' + error.message);
+                return;
+            }
+
+            setIsSuccess(true);
+        } catch (err: any) {
+            console.error('Erreur:', err);
+            alert(isAr ? 'حدث خطأ أثناء إرسال الطلب' : 'Une erreur est survenue');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-            <div className="absolute inset-0" onClick={onClose} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <div dir={isAr ? 'rtl' : 'ltr'} className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl relative text-[#1E3A2B] font-sans">
 
-            <div className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100 relative z-10">
-
-                {/* Close Button */}
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition cursor-pointer"
-                >
-                    <X size={18} />
+                <button onClick={onClose} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                    <X size={20} />
                 </button>
 
-                {isSubmitted ? (
-                    <div className="p-8 text-center space-y-4">
-                        <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                            <CheckCircle2 size={36} />
-                        </div>
-                        <h3 className="text-xl font-extrabold text-[#1E3A2B]">
-                            {lang === 'ar' ? 'تم تأكيد طلبك بنجاح!' : 'Commande Confirmée !'}
+                {isSuccess ? (
+                    <div className="text-center py-8 space-y-3">
+                        <CheckCircle2 size={56} className="text-emerald-600 mx-auto animate-bounce" />
+                        <h3 className="text-xl font-bold text-[#1E3A2B]">
+                            {isAr ? 'تم استلام طلبك بنجاح! 🎉' : 'Commande Confirmée ! 🎉'}
                         </h3>
-                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                            {lang === 'ar'
-                                ? 'شكراً لك! سيتصل بك فريقنا قريباً لتأكيد عنوان التسليم والتوصيل.'
+                        <p className="text-xs text-slate-500 leading-relaxed max-w-xs mx-auto">
+                            {isAr
+                                ? 'شكراً لك! سيتصل بك فريقنا في أقرب وقت لتأكيد الشحن.'
                                 : 'Merci ! Notre équipe vous contactera sous peu pour confirmer la livraison.'}
                         </p>
                         <button
-                            onClick={() => {
-                                setIsSubmitted(false);
-                                onClose();
-                            }}
-                            className="w-full bg-[#1E3A2B] text-white font-bold py-3 rounded-xl text-xs cursor-pointer"
+                            onClick={onClose}
+                            className="mt-4 px-6 py-2.5 bg-[#1E3A2B] text-white text-xs font-bold rounded-xl"
                         >
-                            {lang === 'ar' ? 'إغلاق' : 'Fermer'}
+                            {isAr ? 'إغلاق' : 'Fermer'}
                         </button>
                     </div>
                 ) : (
-                    <div className="p-6 space-y-5">
-                        <div className="text-center space-y-1">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#D97706] bg-[#D97706]/10 px-3 py-1 rounded-full">
-                {lang === 'ar' ? 'الدفع عند الاستلام (COD)' : 'Paiement à la Livraison (COD)'}
-              </span>
-                            <h3 className="text-lg font-extrabold text-[#1E3A2B] pt-1">
-                                {lang === 'ar' ? 'أدخل معلوماتك لإتمام الطلب' : 'Finalisez Votre Commande'}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="border-b pb-3">
+                            <span className="text-[10px] font-extrabold uppercase text-[#D97706]">
+                                {isAr ? 'تأكيد الطلب السريع' : 'Commande Express COD'}
+                            </span>
+                            <h3 className="text-base sm:text-lg font-bold text-[#1E3A2B]">
+                                {isAr ? product.nameAr : product.nameFr}
                             </h3>
+                            <p className="text-sm font-extrabold text-[#D97706] mt-0.5">
+                                {product.price} DH <span className="text-[10px] text-slate-400 font-normal">{isAr ? '(التوصيل سريع)' : '(Livraison Express)'}</span>
+                            </p>
                         </div>
 
-                        {/* Product Summary */}
-                        <div className="bg-[#FDFBF7] p-3.5 rounded-xl border border-slate-200 flex items-center gap-3">
-                            <div className="w-14 h-14 relative shrink-0 bg-white rounded-lg p-1 border border-slate-100 flex items-center justify-center">
-                                <img
-                                    src={product.image || '/doypack_3_flavors_lineup.png'}
-                                    alt={nameStr}
-                                    className="object-contain max-h-12"
+                        <div className="space-y-3 text-xs font-medium">
+                            <div>
+                                <label className="block text-slate-700 mb-1">{isAr ? 'الاسم الكامل *' : 'Nom & Prénom *'}</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    placeholder={isAr ? 'مثال: محمد العلوي' : 'Ex: Mohamed Alami'}
+                                    className="w-full px-3 py-2.5 border rounded-xl outline-none focus:border-[#D97706] bg-slate-50"
                                 />
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <h4 className="text-xs font-bold text-[#1E3A2B] truncate">{nameStr}</h4>
-                                <p className="text-[10px] text-slate-500 font-medium truncate">{weightStr}</p>
+
+                            <div>
+                                <label className="block text-slate-700 mb-1">{isAr ? 'رقم الهاتف *' : 'Téléphone *'}</label>
+                                <input
+                                    type="tel"
+                                    required
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
+                                    placeholder="06 XX XX XX XX"
+                                    className="w-full px-3 py-2.5 border rounded-xl outline-none focus:border-[#D97706] bg-slate-50"
+                                />
                             </div>
-                            <span className="text-sm font-extrabold text-[#D97706] shrink-0">
-                {product.price} DH
-              </span>
+
+                            <div>
+                                <label className="block text-slate-700 mb-1">{isAr ? 'المدينة *' : 'Ville *'}</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={city}
+                                    onChange={(e) => setCity(e.target.value)}
+                                    placeholder={isAr ? 'مثال: الدار البيضاء، الرباط...' : 'Ex: Casablanca, Rabat...'}
+                                    className="w-full px-3 py-2.5 border rounded-xl outline-none focus:border-[#D97706] bg-slate-50"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-slate-700 mb-1">{isAr ? 'العنوان الشخصي' : 'Adresse de livraison'}</label>
+                                <input
+                                    type="text"
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                    placeholder={isAr ? 'الحي، الشارع، أرقام المنزل...' : 'Quartier, Rue...'}
+                                    className="w-full px-3 py-2.5 border rounded-xl outline-none focus:border-[#D97706] bg-slate-50"
+                                />
+                            </div>
                         </div>
 
-                        {/* Form */}
-                        <form onSubmit={handleSubmit} className="space-y-3">
-                            <div>
-                                <label className="block text-[11px] font-bold text-[#1E3A2B] mb-1">
-                                    {lang === 'ar' ? 'الاسم الكامل *' : 'Nom Complet *'}
-                                </label>
-                                <div className="relative">
-                                    <User size={16} className="absolute left-3 top-3 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        required
-                                        value={fullName}
-                                        onChange={(e) => setFullName(e.target.value)}
-                                        placeholder={lang === 'ar' ? 'مثال: محمد العلوي' : 'ex: Mohamed Alami'}
-                                        className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D97706] text-[#1E3A2B] font-medium"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-bold text-[#1E3A2B] mb-1">
-                                    {lang === 'ar' ? 'رقم الهاتف *' : 'Numéro de Téléphone *'}
-                                </label>
-                                <div className="relative">
-                                    <Phone size={16} className="absolute left-3 top-3 text-slate-400" />
-                                    <input
-                                        type="tel"
-                                        required
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value)}
-                                        placeholder="06XX XX XX XX"
-                                        className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D97706] text-[#1E3A2B] font-medium"
-                                    />
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-bold text-[#1E3A2B] mb-1">
-                                    {lang === 'ar' ? 'المدينة والعنوان *' : 'Ville & Adresse *'}
-                                </label>
-                                <div className="relative">
-                                    <MapPin size={16} className="absolute left-3 top-3 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        required
-                                        value={city}
-                                        onChange={(e) => setCity(e.target.value)}
-                                        placeholder={lang === 'ar' ? 'مثال: الدار البيضاء، معاريف' : 'ex: Casablanca, Maarif'}
-                                        className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-[#D97706] text-[#1E3A2B] font-medium"
-                                    />
-                                </div>
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="w-full bg-[#D97706] hover:bg-[#B45309] text-white font-extrabold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition text-xs shadow-md cursor-pointer mt-4"
-                            >
-                                <ShoppingBag size={16} />
-                                <span>{lang === 'ar' ? 'تأكيد الطلب الآن' : 'Confirmer la Commande'}</span>
-                            </button>
-                        </form>
-
-                        <div className="flex justify-around items-center pt-2 text-[10px] text-slate-500 font-semibold border-t border-slate-100">
-                            <div className="flex items-center gap-1">
-                                <Truck size={13} className="text-[#D97706]" />
-                                <span>{lang === 'ar' ? 'توصيل سريع' : 'Livraison Express'}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <ShieldCheck size={13} className="text-emerald-600" />
-                                <span>{lang === 'ar' ? 'الدفع عند الاستلام' : 'Paiement à la livraison'}</span>
-                            </div>
-                        </div>
-                    </div>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full py-3.5 bg-[#D97706] hover:bg-[#b56305] text-white font-extrabold text-xs rounded-xl transition flex items-center justify-center gap-2 active:scale-95 shadow-md cursor-pointer"
+                        >
+                            <ShoppingBag size={14} />
+                            <span>
+                                {loading
+                                    ? (isAr ? 'جاري الإرسال...' : 'Envoi en cours...')
+                                    : (isAr ? `تأكيد الطلب (${product.price} DH)` : `Confirmer (${product.price} DH)`)}
+                            </span>
+                        </button>
+                    </form>
                 )}
-
             </div>
         </div>
     );

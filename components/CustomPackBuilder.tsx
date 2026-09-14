@@ -39,7 +39,7 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
             nameFr: `Pack Trio Sur-Mesure (${selectedItems.map(i => i.nameFr).join(' + ')})`,
             nameAr: `باك تريو حسب الاختيار (${selectedItems.map(i => i.nameAr).join(' + ')})`,
             price: 210,
-            image: selectedItems[0]?.image || '/doypack_3_flavors_lineup.png',
+            image: selectedItems?.image || '/doypack_3_flavors_lineup.png',
             isPack: true,
             items: selectedItems,
         };
@@ -183,7 +183,7 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
                     })}
                 </div>
 
-                {/* Big Toggle Button for Mobile */}
+                {/* Toggle Button for Mobile */}
                 <div className="text-center sm:hidden pt-2">
                     <button
                         type="button"
