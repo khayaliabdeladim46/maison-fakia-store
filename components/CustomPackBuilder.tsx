@@ -40,6 +40,7 @@ export default function CustomPackBuilder({ onOrderCustomPack, t, lang = 'fr' }:
             nameAr: `باك تريو حسب الاختيار (${selectedItems.map(i => i.nameAr).join(' + ')})`,
             price: 210,
             image: selectedItems?.[0]?.image || selectedItems?.[0]?.image_url || '/doypack_3_flavors_lineup.png',
+
             isPack: true,
             items: selectedItems,
         };
