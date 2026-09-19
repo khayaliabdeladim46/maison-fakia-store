@@ -6,18 +6,8 @@ import {
     Package, Clock, CheckCircle2, Truck, Check,
     Search, MessageCircle, Phone, MapPin,
     Plus, Trash2, Edit3, Layers, X, ShoppingBag, Wallet,
-    Volume2, Sparkles, FileText, Printer, Calendar
+    Volume2, Sparkles, FileText, Printer, Calendar, Download, Building2
 } from 'lucide-react';
-
-// صور الـ Doypack الرسمية المعتمدة
-const PACKAGING_PRESETS = [
-    { label: 'عسل & لوز', url: '/doypack_miel_amandes.png' },
-    { label: 'شوكولاتة سوداء', url: '/doypack_chocolat_noir.png' },
-    { label: 'أملو & أركان', url: '/doypack_amlou_argan.png' },
-    { label: 'فواكه جافة', url: '/doypack_fruits_secs.png' },
-    { label: 'كرات الطاقة', url: '/doypack_energy_balls.png' },
-    { label: 'بروتين سبورت', url: '/doypack_pro_sport.png' },
-];
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=500&auto=format&fit=crop&q=80';
 
@@ -113,6 +103,7 @@ export default function AdminDashboard() {
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [selectedMonth, setSelectedMonth] = useState<string>('2026-09');
+    const [selectedCity, setSelectedCity] = useState<string>('all');
 
     // Modals
     const [devisSingleOrder, setDevisSingleOrder] = useState<any | null>(null);
@@ -213,14 +204,18 @@ export default function AdminDashboard() {
         setProducts(products.filter((p) => p.id !== prodId));
     };
 
+    // Extract unique list of cities dynamically from orders
+    const availableCities = Array.from(new Set(orders.map(o => o.city).filter(Boolean)));
+
     const confirmedRevenue = orders
         .filter((o) => o.status === 'Delivered' || o.status === 'Confirmed')
         .reduce((acc, curr) => acc + (parseFloat(curr.total_price || curr.price) || 0), 0);
 
-    // Filtered list
+    // Multi-criteria filtering (Search + Status + Month + City)
     const filteredOrders = orders.filter((order) => {
         const clientName = getClientName(order).toLowerCase();
         const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
+        const matchesCity = selectedCity === 'all' || (order.city && order.city === selectedCity);
         const matchesSearch =
             clientName.includes(searchTerm.toLowerCase()) ||
             (order.phone && order.phone.includes(searchTerm)) ||
@@ -232,10 +227,43 @@ export default function AdminDashboard() {
             matchesMonth = order.created_at.startsWith(selectedMonth);
         }
 
-        return matchesStatus && matchesSearch && matchesMonth;
+        return matchesStatus && matchesSearch && matchesMonth && matchesCity;
     });
 
     const monthlyTotalRevenue = filteredOrders.reduce((acc, curr) => acc + (parseFloat(curr.total_price || curr.price) || 0), 0);
+
+    // 📊 EXPORT TO EXCEL / CSV FUNCTION WITH UTF-8 BOM
+    const exportToCSV = () => {
+        if (filteredOrders.length === 0) {
+            alert('لا توجد طلبيات لتصديرها!');
+            return;
+        }
+
+        const headers = ['المعرف (ID)', 'التاريخ', 'اسم الزبون', 'الهاتف', 'المدينة', 'العنوان', 'المنتج', 'الكمية', 'المبلغ (DH)', 'الحالة'];
+
+        const rows = filteredOrders.map(ord => [
+            ord.id || '',
+            ord.created_at ? ord.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+            `"${(getClientName(ord) || '').replace(/"/g, '""')}"`,
+            `"${(ord.phone || '').replace(/"/g, '""')}"`,
+            `"${(ord.city || '').replace(/"/g, '""')}"`,
+            `"${(ord.address || '').replace(/"/g, '""')}"`,
+            `"${(ord.product_name || 'غرانولا').replace(/"/g, '""')}"`,
+            ord.quantity || 1,
+            ord.total_price || ord.price || 0,
+            ord.status || 'Pending'
+        ]);
+
+        const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `commandes_maison_fakia_${selectedMonth}_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -253,44 +281,19 @@ export default function AdminDashboard() {
     return (
         <div dir="rtl" className="min-h-screen bg-[#FAF9F6] text-[#1E3A2B] font-sans pb-24 relative">
 
-            {/* PRINT STYLING FOR FLAWLESS A4 EXPORT */}
+            {/* PRINT STYLING FOR A4 EXPORT */}
             <style>{`
                 @media print {
-                    body {
-                        background: white !important;
-                        color: black !important;
-                    }
-                    .no-print, header, main, button, select, input {
-                        display: none !important;
-                    }
-                    .fixed.inset-0 {
-                        position: absolute !important;
-                        inset: 0 !important;
-                        background: white !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        overflow: visible !important;
-                    }
-                    #devis-single-print, #devis-monthly-print {
-                        display: block !important;
-                        width: 100% !important;
-                        max-width: 100% !important;
-                        padding: 20px !important;
-                        box-shadow: none !important;
-                        border: none !important;
-                    }
-                    * {
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-                    @page {
-                        size: A4 portrait;
-                        margin: 10mm;
-                    }
+                    body { background: white !important; color: black !important; }
+                    .no-print, header, main, button, select, input { display: none !important; }
+                    .fixed.inset-0 { position: absolute !important; inset: 0 !important; background: white !important; padding: 0 !important; margin: 0 !important; }
+                    #devis-single-print, #devis-monthly-print { display: block !important; width: 100% !important; padding: 20px !important; border: none !important; }
+                    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+                    @page { size: A4 portrait; margin: 10mm; }
                 }
             `}</style>
 
-            {/* POPUP NOTIFICATION TOAST */}
+            {/* 🔔 POPUP NOTIFICATION TOAST WITH AUDIO & ANIMATION */}
             {newOrderAlert && (
                 <div className="fixed top-16 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-50 animate-bounce duration-500 no-print">
                     <div className="bg-[#1E3A2B] border-2 border-[#D97706] text-white p-4 rounded-3xl shadow-2xl flex items-start justify-between gap-3 backdrop-blur-md">
@@ -299,7 +302,7 @@ export default function AdminDashboard() {
                                 <Sparkles size={20} className="animate-spin" />
                             </div>
                             <div className="space-y-1 text-right">
-                                <span className="font-black text-xs text-[#D97706] block">طلبية جديدة وصلت</span>
+                                <span className="font-black text-xs text-[#D97706] block">طلبية جديدة وصلت!</span>
                                 <p className="text-xs font-bold text-emerald-100">
                                     الزبون: <span className="text-white font-black">{getClientName(newOrderAlert)}</span> ({newOrderAlert.city || 'المغرب'})
                                 </p>
@@ -323,15 +326,12 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* HEADER DESIGN */}
+            {/* HEADER */}
             <header className="bg-[#1E3A2B] text-white py-3.5 px-4 sm:px-8 shadow-xl sticky top-0 z-40 backdrop-blur-md bg-opacity-95 border-b border-[#D97706]/30 no-print">
                 <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-
                     <div className="flex items-center justify-between w-full sm:w-auto">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[#D97706] text-white rounded-2xl flex items-center justify-center font-black text-base shadow-lg">
-                                MF
-                            </div>
+                            <div className="w-10 h-10 bg-[#D97706] text-white rounded-2xl flex items-center justify-center font-black text-base shadow-lg">MF</div>
                             <div>
                                 <h1 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
                                     <span>Maison Fakia Admin</span>
@@ -341,46 +341,28 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => { setSoundEnabled(true); playNotificationChime(); }}
-                            className="sm:hidden p-2.5 bg-amber-500/20 text-amber-300 rounded-2xl border border-amber-500/40"
-                        >
+                        <button onClick={() => { setSoundEnabled(true); playNotificationChime(); }} className="sm:hidden p-2.5 bg-amber-500/20 text-amber-300 rounded-2xl border border-amber-500/40">
                             <Volume2 size={18} />
                         </button>
                     </div>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                         <div className="grid grid-cols-2 w-full sm:w-auto bg-emerald-950/90 p-1 rounded-2xl border border-emerald-800">
-                            <button
-                                onClick={() => setActiveTab('orders')}
-                                className={`py-2 px-5 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-2 cursor-pointer ${
-                                    activeTab === 'orders' ? 'bg-[#D97706] text-white shadow-md' : 'text-emerald-200 hover:text-white'
-                                }`}
-                            >
+                            <button onClick={() => setActiveTab('orders')} className={`py-2 px-5 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'orders' ? 'bg-[#D97706] text-white shadow-md' : 'text-emerald-200 hover:text-white'}`}>
                                 <Layers size={15} />
                                 <span>الطلبيات ({orders.length})</span>
                             </button>
-
-                            <button
-                                onClick={() => setActiveTab('products')}
-                                className={`py-2 px-5 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-2 cursor-pointer ${
-                                    activeTab === 'products' ? 'bg-[#D97706] text-white shadow-md' : 'text-emerald-200 hover:text-white'
-                                }`}
-                            >
+                            <button onClick={() => setActiveTab('products')} className={`py-2 px-5 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'products' ? 'bg-[#D97706] text-white shadow-md' : 'text-emerald-200 hover:text-white'}`}>
                                 <ShoppingBag size={15} />
                                 <span>المنتجات ({products.length})</span>
                             </button>
                         </div>
 
-                        <button
-                            onClick={() => { setSoundEnabled(true); playNotificationChime(); }}
-                            className="hidden sm:flex px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-2xl border border-amber-500/40 items-center gap-2 text-xs font-bold cursor-pointer"
-                        >
+                        <button onClick={() => { setSoundEnabled(true); playNotificationChime(); }} className="hidden sm:flex px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-2xl border border-amber-500/40 items-center gap-2 text-xs font-bold cursor-pointer">
                             <Volume2 size={16} />
                             <span>تفعيل الصوت</span>
                         </button>
                     </div>
-
                 </div>
             </header>
 
@@ -391,28 +373,19 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
                     <div className="bg-white p-4 sm:p-6 rounded-3xl border border-emerald-200/80 shadow-xs space-y-1">
                         <span className="text-[11px] sm:text-xs font-bold text-emerald-800 block">المداخيل الإجمالية</span>
-                        <span className="text-xl sm:text-3xl font-black text-[#1E3A2B] block">
-                            {confirmedRevenue.toLocaleString()} <span className="text-xs text-[#D97706]">DH</span>
-                        </span>
+                        <span className="text-xl sm:text-3xl font-black text-[#1E3A2B] block">{confirmedRevenue.toLocaleString()} <span className="text-xs text-[#D97706]">DH</span></span>
                     </div>
-
                     <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
                         <span className="text-[11px] sm:text-xs font-bold text-slate-500 block">إجمالي الطلبات</span>
                         <span className="text-xl sm:text-3xl font-black text-[#1E3A2B] block">{orders.length}</span>
                     </div>
-
                     <div className="bg-white p-4 sm:p-6 rounded-3xl border border-amber-200/80 shadow-xs space-y-1">
                         <span className="text-[11px] sm:text-xs font-bold text-amber-700 block">قيد الانتظار</span>
-                        <span className="text-xl sm:text-3xl font-black text-amber-600 block">
-                            {orders.filter(o => !o.status || o.status === 'Pending').length}
-                        </span>
+                        <span className="text-xl sm:text-3xl font-black text-amber-600 block">{orders.filter(o => !o.status || o.status === 'Pending').length}</span>
                     </div>
-
                     <div className="bg-white p-4 sm:p-6 rounded-3xl border border-emerald-200/80 shadow-xs space-y-1">
                         <span className="text-[11px] sm:text-xs font-bold text-emerald-700 block">تم التسليم</span>
-                        <span className="text-xl sm:text-3xl font-black text-emerald-600 block">
-                            {orders.filter(o => o.status === 'Delivered').length}
-                        </span>
+                        <span className="text-xl sm:text-3xl font-black text-emerald-600 block">{orders.filter(o => o.status === 'Delivered').length}</span>
                     </div>
                 </div>
 
@@ -421,37 +394,66 @@ export default function AdminDashboard() {
                     <div className="space-y-4">
 
                         <div className="bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-                            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
-                                <div className="relative w-full sm:w-72">
+
+                            {/* SEARCH + MONTH FILTER + CITY FILTER */}
+                            <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
+                                <div className="relative w-full sm:w-64">
                                     <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                     <input
                                         type="text"
-                                        placeholder="بحث بالاسم، الرقم، أو المدينة..."
+                                        placeholder="بحث بالاسم، الرقم، المدينة..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                         className="w-full pr-10 pl-4 py-2.5 bg-[#FAF9F6] border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:border-[#D97706]"
                                     />
                                 </div>
 
-                                <div className="flex items-center gap-2 w-full sm:w-auto text-xs font-bold">
-                                    <Calendar size={16} className="text-[#D97706] shrink-0" />
-                                    <select
-                                        value={selectedMonth}
-                                        onChange={(e) => setSelectedMonth(e.target.value)}
-                                        className="px-3.5 py-2.5 bg-[#FAF9F6] border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 focus:outline-none focus:border-[#D97706] w-full sm:w-auto cursor-pointer"
-                                    >
-                                        <option value="all">جميع الأشهر (Toutes les dates)</option>
-                                        <option value="2026-09">شتنبر 2026 (Septembre 2026)</option>
-                                        <option value="2026-08">غشت 2026 (Août 2026)</option>
-                                        <option value="2026-07">يوليوز 2026 (Juillet 2026)</option>
-                                    </select>
+                                <div className="flex items-center gap-2 w-full sm:w-auto">
+                                    {/* Month Selector */}
+                                    <div className="flex items-center gap-1.5 bg-[#FAF9F6] border border-slate-200 px-3 py-2 rounded-2xl text-xs font-bold w-full sm:w-auto">
+                                        <Calendar size={15} className="text-[#D97706] shrink-0" />
+                                        <select
+                                            value={selectedMonth}
+                                            onChange={(e) => setSelectedMonth(e.target.value)}
+                                            className="bg-transparent focus:outline-none text-slate-700 text-xs cursor-pointer w-full"
+                                        >
+                                            <option value="all">جميع الأشهر</option>
+                                            <option value="2026-09">شتنبر 2026</option>
+                                            <option value="2026-08">غشت 2026</option>
+                                        </select>
+                                    </div>
+
+                                    {/* 🏙️ City Selector */}
+                                    <div className="flex items-center gap-1.5 bg-[#FAF9F6] border border-slate-200 px-3 py-2 rounded-2xl text-xs font-bold w-full sm:w-auto">
+                                        <Building2 size={15} className="text-[#D97706] shrink-0" />
+                                        <select
+                                            value={selectedCity}
+                                            onChange={(e) => setSelectedCity(e.target.value)}
+                                            className="bg-transparent focus:outline-none text-slate-700 text-xs cursor-pointer w-full"
+                                        >
+                                            <option value="all">جميع المدن ({availableCities.length})</option>
+                                            {availableCities.map(city => (
+                                                <option key={city} value={city}>{city}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
+                            {/* ACTION BUTTONS (DEVIS PDF + CSV EXPORT) */}
                             <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
                                 <button
+                                    onClick={exportToCSV}
+                                    className="px-3.5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-black transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                                    title="تصدير لـ Excel"
+                                >
+                                    <Download size={15} />
+                                    <span>تصدير CSV</span>
+                                </button>
+
+                                <button
                                     onClick={() => setShowMonthlyDevis(true)}
-                                    className="px-4 py-2.5 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-2xl text-xs font-black transition shadow-sm flex items-center gap-2 cursor-pointer"
+                                    className="px-3.5 py-2.5 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-2xl text-xs font-black transition shadow-xs flex items-center gap-1.5 cursor-pointer"
                                 >
                                     <FileText size={15} />
                                     <span>Devis الشهر (PDF)</span>
@@ -462,9 +464,7 @@ export default function AdminDashboard() {
                                         <button
                                             key={st}
                                             onClick={() => setFilterStatus(st)}
-                                            className={`px-3 py-2 rounded-xl transition whitespace-nowrap text-[11px] cursor-pointer ${
-                                                filterStatus === st ? 'bg-[#D97706] text-white' : 'bg-slate-100 text-slate-600'
-                                            }`}
+                                            className={`px-2.5 py-2 rounded-xl transition whitespace-nowrap text-[11px] cursor-pointer ${filterStatus === st ? 'bg-[#D97706] text-white' : 'bg-slate-100 text-slate-600'}`}
                                         >
                                             {st === 'all' ? 'الكل' : st === 'Pending' ? 'الانتظار' : st === 'Confirmed' ? 'مؤكدة' : st === 'Shipped' ? 'فـ الطريق' : 'مسلّمة'}
                                         </button>
@@ -473,109 +473,182 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
-                        {/* ORDERS TABLE DESKTOP / CARDS MOBILE */}
+                        {/* ORDERS CONTAINER */}
                         {loadingOrders ? (
                             <div className="p-12 text-center text-xs font-bold text-slate-400 bg-white rounded-3xl">جاري تحميل الطلبيات...</div>
                         ) : filteredOrders.length === 0 ? (
                             <div className="p-12 text-center space-y-2 bg-white rounded-3xl">
                                 <Package size={36} className="mx-auto text-slate-300" />
-                                <p className="text-xs font-bold text-slate-500">لا توجد طلبيات مطابقة للبحث أو الشهر المحدد.</p>
+                                <p className="text-xs font-bold text-slate-500">لا توجد طلبيات مطابقة للبحث، المدينة أو الشهر المحدد.</p>
                             </div>
                         ) : (
-                            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-right text-xs">
-                                        <thead className="bg-[#FAF9F6] text-slate-600 font-black border-b border-slate-200">
-                                        <tr>
-                                            <th className="p-4">الزبون والهاتف</th>
-                                            <th className="p-4">المنتج والكمية</th>
-                                            <th className="p-4">المبلغ الإجمالي</th>
-                                            <th className="p-4">المدينة والعنوان</th>
-                                            <th className="p-4">الحالة</th>
-                                            <th className="p-4 text-center">التواصل والـ Devis</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 font-medium">
-                                        {filteredOrders.map((ord) => {
-                                            const clientName = getClientName(ord);
-                                            const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
-                                            const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
-                                            const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${clientName}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
+                            <>
+                                {/* 📱 1. MOBILE CARD VIEW (KOLA CLIENT F CARTE) */}
+                                <div className="block sm:hidden space-y-3">
+                                    {filteredOrders.map((ord) => {
+                                        const clientName = getClientName(ord);
+                                        const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
+                                        const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
+                                        const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${clientName}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
 
-                                            return (
-                                                <tr key={ord.id} className="hover:bg-amber-50/20 transition">
-                                                    <td className="p-4 space-y-1">
-                                                        <span className="font-extrabold text-[#1E3A2B] block text-sm">{clientName}</span>
-                                                        <span className="text-[11px] text-slate-500 flex items-center gap-1 font-bold" dir="ltr">
-                                                                <Phone size={12} className="text-[#D97706]" /> {ord.phone}
-                                                            </span>
-                                                    </td>
-
-                                                    <td className="p-4 space-y-1">
-                                                        <span className="font-extrabold text-[#1E3A2B] block">{ord.product_name || 'منتج غير محدد'}</span>
-                                                        <span className="text-[10px] text-slate-400 font-bold block">الكمية: {ord.quantity || 1}</span>
-                                                    </td>
-
-                                                    <td className="p-4">
-                                                        <span className="font-black text-[#D97706] text-sm">{ord.total_price || ord.price || 0} DH</span>
-                                                    </td>
-
-                                                    <td className="p-4 space-y-1">
-                                                            <span className="font-bold text-slate-700 block flex items-center gap-1">
-                                                                <MapPin size={12} className="text-[#D97706]" /> {ord.city || 'غير محددة'}
-                                                            </span>
-                                                        <span className="text-[10px] text-slate-400 block max-w-xs truncate">{ord.address}</span>
-                                                    </td>
-
-                                                    <td className="p-4">
+                                        return (
+                                            <div key={ord.id} className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-xs space-y-3">
+                                                <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">
+                                                    <div>
+                                                        <h3 className="font-extrabold text-[#1E3A2B] text-sm">{clientName}</h3>
+                                                        <span className="text-xs font-bold text-[#D97706] flex items-center gap-1 mt-0.5" dir="ltr">
+                                                            <Phone size={12} /> {ord.phone}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5">
                                                         {getStatusBadge(ord.status || 'Pending')}
-                                                    </td>
+                                                        <button
+                                                            onClick={() => setDevisSingleOrder(ord)}
+                                                            className="p-1.5 bg-amber-50 text-[#D97706] rounded-xl text-xs font-black border border-amber-200 flex items-center gap-1 cursor-pointer"
+                                                            title="Devis الزبون"
+                                                        >
+                                                            <FileText size={13} />
+                                                        </button>
+                                                    </div>
+                                                </div>
 
-                                                    <td className="p-4">
-                                                        <div className="flex items-center justify-center gap-2">
-                                                            <a
-                                                                href={waLink}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                                className="p-2 bg-[#25D366] text-white rounded-xl transition shadow-xs flex items-center gap-1 text-[11px] font-bold"
-                                                            >
-                                                                <MessageCircle size={14} />
-                                                                <span>واتساب</span>
-                                                            </a>
+                                                <div className="space-y-1.5 text-xs">
+                                                    <div className="flex items-center justify-between text-slate-700">
+                                                        <span className="font-extrabold text-[#1E3A2B]">{ord.product_name || 'منتج غير محدد'}</span>
+                                                        <span className="font-black text-[#D97706] text-sm">{ord.total_price || ord.price || 0} DH</span>
+                                                    </div>
 
-                                                            <button
-                                                                onClick={() => setDevisSingleOrder(ord)}
-                                                                className="px-2.5 py-1.5 bg-amber-50 text-[#D97706] rounded-xl text-[11px] font-black border border-amber-200 flex items-center gap-1 cursor-pointer"
-                                                            >
-                                                                <FileText size={13} />
-                                                                <span>Devis</span>
-                                                            </button>
+                                                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                                        <span className="flex items-center gap-1 font-semibold">
+                                                            <MapPin size={12} className="text-[#D97706]" /> {ord.city || 'المدينة غير محددة'}
+                                                        </span>
+                                                        <span className="font-bold">الكمية: {ord.quantity || 1}</span>
+                                                    </div>
+                                                </div>
 
-                                                            <select
-                                                                value={ord.status || 'Pending'}
-                                                                onChange={(e) => updateOrderStatus(ord.id, e.target.value)}
-                                                                className="px-2.5 py-1.5 bg-[#FAF9F6] border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700"
-                                                            >
-                                                                <option value="Pending">قيد الانتظار</option>
-                                                                <option value="Confirmed">تأكيد الكوموند</option>
-                                                                <option value="Shipped">خرجت للتوصيل</option>
-                                                                <option value="Delivered">تم التسليم</option>
-                                                            </select>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                        </tbody>
-                                    </table>
+                                                <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                                                    <a
+                                                        href={waLink}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="flex-1 py-2 bg-[#25D366] text-white rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold"
+                                                    >
+                                                        <MessageCircle size={15} />
+                                                        <span>واتساب</span>
+                                                    </a>
+
+                                                    <select
+                                                        value={ord.status || 'Pending'}
+                                                        onChange={(e) => updateOrderStatus(ord.id, e.target.value)}
+                                                        className="py-2 px-3 bg-[#FAF9F6] border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer"
+                                                    >
+                                                        <option value="Pending">انتظار</option>
+                                                        <option value="Confirmed">تأكيد</option>
+                                                        <option value="Shipped">في الطريق</option>
+                                                        <option value="Delivered">تم التسليم</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            </div>
+
+                                {/* 💻 2. DESKTOP TABLE VIEW */}
+                                <div className="hidden sm:block bg-white rounded-3xl border border-slate-200 overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-right text-xs">
+                                            <thead className="bg-[#FAF9F6] text-slate-600 font-black border-b border-slate-200">
+                                            <tr>
+                                                <th className="p-4">الزبون والهاتف</th>
+                                                <th className="p-4">المنتج والكمية</th>
+                                                <th className="p-4">المبلغ الإجمالي</th>
+                                                <th className="p-4">المدينة والعنوان</th>
+                                                <th className="p-4">الحالة</th>
+                                                <th className="p-4 text-center">التواصل والـ Devis</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 font-medium">
+                                            {filteredOrders.map((ord) => {
+                                                const clientName = getClientName(ord);
+                                                const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
+                                                const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
+                                                const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${clientName}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
+
+                                                return (
+                                                    <tr key={ord.id} className="hover:bg-amber-50/20 transition">
+                                                        <td className="p-4 space-y-1">
+                                                            <span className="font-extrabold text-[#1E3A2B] block text-sm">{clientName}</span>
+                                                            <span className="text-[11px] text-slate-500 flex items-center gap-1 font-bold" dir="ltr">
+                                                                    <Phone size={12} className="text-[#D97706]" /> {ord.phone}
+                                                                </span>
+                                                        </td>
+
+                                                        <td className="p-4 space-y-1">
+                                                            <span className="font-extrabold text-[#1E3A2B] block">{ord.product_name || 'منتج غير محدد'}</span>
+                                                            <span className="text-[10px] text-slate-400 font-bold block">الكمية: {ord.quantity || 1}</span>
+                                                        </td>
+
+                                                        <td className="p-4">
+                                                            <span className="font-black text-[#D97706] text-sm">{ord.total_price || ord.price || 0} DH</span>
+                                                        </td>
+
+                                                        <td className="p-4 space-y-1">
+                                                                <span className="font-bold text-slate-700 block flex items-center gap-1">
+                                                                    <MapPin size={12} className="text-[#D97706]" /> {ord.city || 'غير محددة'}
+                                                                </span>
+                                                            <span className="text-[10px] text-slate-400 block max-w-xs truncate">{ord.address}</span>
+                                                        </td>
+
+                                                        <td className="p-4">
+                                                            {getStatusBadge(ord.status || 'Pending')}
+                                                        </td>
+
+                                                        <td className="p-4">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <a
+                                                                    href={waLink}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                    className="p-2 bg-[#25D366] text-white rounded-xl transition shadow-xs flex items-center gap-1 text-[11px] font-bold"
+                                                                >
+                                                                    <MessageCircle size={14} />
+                                                                    <span>واتساب</span>
+                                                                </a>
+
+                                                                <button
+                                                                    onClick={() => setDevisSingleOrder(ord)}
+                                                                    className="px-2.5 py-1.5 bg-amber-50 text-[#D97706] rounded-xl text-[11px] font-black border border-amber-200 flex items-center gap-1 cursor-pointer"
+                                                                >
+                                                                    <FileText size={13} />
+                                                                    <span>Devis</span>
+                                                                </button>
+
+                                                                <select
+                                                                    value={ord.status || 'Pending'}
+                                                                    onChange={(e) => updateOrderStatus(ord.id, e.target.value)}
+                                                                    className="px-2.5 py-1.5 bg-[#FAF9F6] border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 cursor-pointer"
+                                                                >
+                                                                    <option value="Pending">قيد الانتظار</option>
+                                                                    <option value="Confirmed">تأكيد الكوموند</option>
+                                                                    <option value="Shipped">خرجت للتوصيل</option>
+                                                                    <option value="Delivered">تم التسليم</option>
+                                                                </select>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </>
                         )}
 
                     </div>
                 )}
 
-                {/* TAB 2: PRODUCTS */}
+                {/* TAB 2: PRODUCTS (2x2 ON MOBILE) */}
                 {activeTab === 'products' && (
                     <div className="space-y-4">
                         <div className="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200 shadow-xs">
@@ -724,7 +797,6 @@ export default function AdminDashboard() {
                     <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 space-y-6 border border-slate-200 shadow-2xl relative my-auto">
 
                         <div id="devis-monthly-print" className="space-y-6 text-[#1E3A2B]">
-
                             <div className="flex items-start justify-between border-b border-amber-500/30 pb-4">
                                 <div>
                                     <h2 className="text-xl font-black text-[#1E3A2B]">MAISON FAKIA</h2>
@@ -779,7 +851,6 @@ export default function AdminDashboard() {
                                     </div>
                                 </div>
                             </div>
-
                         </div>
 
                         <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 no-print">
