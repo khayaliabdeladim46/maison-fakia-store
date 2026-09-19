@@ -6,7 +6,8 @@ import {
     Package, Clock, CheckCircle2, Truck, Check,
     Search, MessageCircle, Phone, MapPin,
     Plus, Trash2, Edit3, Layers, X, ShoppingBag,
-    Volume2, Sparkles, FileText, Printer, Calendar, Download, Building2, LogOut
+    Volume2, Sparkles, FileText, Printer, Calendar, Download, Building2, LogOut,
+    Tag, AlertTriangle
 } from 'lucide-react';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=500&auto=format&fit=crop&q=80';
@@ -17,6 +18,7 @@ const INITIAL_PRODUCTS = [
         nameAr: 'غرانولا العسل واللوز',
         nameFr: 'Granola Miel Pur & Amandes',
         price: 75,
+        stock: 24,
         weight: '500g',
         category: 'granola',
         image: '/doypack_miel_amandes.png',
@@ -29,6 +31,7 @@ const INITIAL_PRODUCTS = [
         nameAr: 'غرانولا الشوكولاتة السوداء',
         nameFr: 'Granola Chocolat Noir 70%',
         price: 80,
+        stock: 18,
         weight: '500g',
         category: 'granola',
         image: '/doypack_chocolat_noir.png',
@@ -41,6 +44,7 @@ const INITIAL_PRODUCTS = [
         nameAr: 'غرانولا أملو وأركان',
         nameFr: 'Granola Amlou & Argan Bio',
         price: 85,
+        stock: 3,
         weight: '500g',
         category: 'granola',
         image: '/doypack_amlou_argan.png',
@@ -53,6 +57,7 @@ const INITIAL_PRODUCTS = [
         nameAr: 'مكس الفواكه الجافة الطاقة',
         nameFr: 'Mix Fruits Secs Énergie',
         price: 90,
+        stock: 12,
         weight: '500g',
         category: 'dried_fruits',
         image: '/doypack_fruits_secs.png',
@@ -65,6 +70,7 @@ const INITIAL_PRODUCTS = [
         nameAr: 'كرات الطاقة الطبيعية',
         nameFr: 'Energy Balls Dattes & Cacao',
         price: 65,
+        stock: 4,
         weight: '400g',
         category: 'energy_balls',
         image: '/doypack_energy_balls.png',
@@ -77,6 +83,7 @@ const INITIAL_PRODUCTS = [
         nameAr: 'غرانولا بروتين برو سبورت',
         nameFr: 'Granola Pro-Sport & Seeds',
         price: 95,
+        stock: 15,
         weight: '500g',
         category: 'granola',
         image: '/doypack_pro_sport.png',
@@ -103,11 +110,16 @@ export default function AdminDashboard() {
     const [selectedCity, setSelectedCity] = useState<string>('all');
 
     const [devisSingleOrder, setDevisSingleOrder] = useState<any | null>(null);
+    const [stickerOrder, setStickerOrder] = useState<any | null>(null);
     const [showMonthlyDevis, setShowMonthlyDevis] = useState(false);
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
-    // Auto-unlock AudioContext on first user interaction (Browser Autoplay Policy Fix)
+    // City Normalization Helper
+    const normalizeCity = (city: string) => {
+        if (!city) return '';
+        const trimmed = city.trim();
+        return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+    };
+
     useEffect(() => {
         const unlockAudio = () => {
             try {
@@ -158,8 +170,8 @@ export default function AdminDashboard() {
             const gain = ctx.createGain();
 
             osc.type = 'sine';
-            osc.frequency.setValueAtTime(587.33, now); // D5
-            osc.frequency.exponentialRampToValueAtTime(880, now + 0.18); // A5
+            osc.frequency.setValueAtTime(587.33, now);
+            osc.frequency.exponentialRampToValueAtTime(880, now + 0.18);
 
             gain.gain.setValueAtTime(0.6, now);
             gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
@@ -235,13 +247,21 @@ export default function AdminDashboard() {
         }
     };
 
+    const updateProductStock = async (prodId: string, newStock: number) => {
+        const updated = products.map(p => p.id === prodId ? { ...p, stock: Math.max(0, newStock) } : p);
+        setProducts(updated);
+        await supabase.from('products').update({ stock: Math.max(0, newStock) }).eq('id', prodId);
+    };
+
     const handleDeleteProduct = async (prodId: string) => {
         if (!confirm('هل أنت متأكد من مسح هذا المنتج؟')) return;
         await supabase.from('products').delete().eq('id', prodId);
         setProducts(products.filter((p) => p.id !== prodId));
     };
 
-    const availableCities = Array.from(new Set(orders.map(o => o.city).filter(Boolean)));
+    const availableCities = Array.from(
+        new Set(orders.map(o => normalizeCity(o.city)).filter(Boolean))
+    ).sort();
 
     const confirmedRevenue = orders
         .filter((o) => o.status === 'Delivered' || o.status === 'Confirmed')
@@ -250,11 +270,12 @@ export default function AdminDashboard() {
     const filteredOrders = orders.filter((order) => {
         const clientName = getClientName(order).toLowerCase();
         const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
-        const matchesCity = selectedCity === 'all' || (order.city && order.city === selectedCity);
+        const normalizedOrderCity = normalizeCity(order.city);
+        const matchesCity = selectedCity === 'all' || normalizedOrderCity === selectedCity;
         const matchesSearch =
             clientName.includes(searchTerm.toLowerCase()) ||
             (order.phone && order.phone.includes(searchTerm)) ||
-            (order.city && order.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            (normalizedOrderCity.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (order.product_name && order.product_name.toLowerCase().includes(searchTerm.toLowerCase()));
 
         let matchesMonth = true;
@@ -280,7 +301,7 @@ export default function AdminDashboard() {
             ord.created_at ? ord.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
             `"${(getClientName(ord) || '').replace(/"/g, '""')}"`,
             `"${(ord.phone || '').replace(/"/g, '""')}"`,
-            `"${(ord.city || '').replace(/"/g, '""')}"`,
+            `"${(normalizeCity(ord.city) || '').replace(/"/g, '""')}"`,
             `"${(ord.address || '').replace(/"/g, '""')}"`,
             `"${(ord.product_name || 'غرانولا').replace(/"/g, '""')}"`,
             ord.quantity || 1,
@@ -302,13 +323,13 @@ export default function AdminDashboard() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'Confirmed':
-                return <span className="h-7 px-2.5 bg-blue-100 text-blue-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-blue-200"><CheckCircle2 size={12}/> مؤكدة</span>;
+                return <span className="h-7 px-2.5 bg-blue-100 text-blue-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-blue-200 shrink-0"><CheckCircle2 size={12}/> مؤكدة</span>;
             case 'Shipped':
-                return <span className="h-7 px-2.5 bg-purple-100 text-purple-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-purple-200"><Truck size={12}/> في الطريق</span>;
+                return <span className="h-7 px-2.5 bg-purple-100 text-purple-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-purple-200 shrink-0"><Truck size={12}/> في الطريق</span>;
             case 'Delivered':
-                return <span className="h-7 px-2.5 bg-emerald-100 text-emerald-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-emerald-200"><Check size={12}/> تم التسليم</span>;
+                return <span className="h-7 px-2.5 bg-emerald-100 text-emerald-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-emerald-200 shrink-0"><Check size={12}/> تم التسليم</span>;
             default:
-                return <span className="h-7 px-2.5 bg-amber-100 text-amber-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-amber-200"><Clock size={12}/> قيد الانتظار</span>;
+                return <span className="h-7 px-2.5 bg-amber-100 text-amber-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-amber-200 shrink-0"><Clock size={12}/> قيد الانتظار</span>;
         }
     };
 
@@ -320,9 +341,9 @@ export default function AdminDashboard() {
                     body { background: white !important; color: black !important; }
                     .no-print, header, main, button, select, input { display: none !important; }
                     .fixed.inset-0 { position: absolute !important; inset: 0 !important; background: white !important; padding: 0 !important; margin: 0 !important; }
-                    #devis-single-print, #devis-monthly-print { display: block !important; width: 100% !important; padding: 20px !important; border: none !important; }
+                    #devis-single-print, #devis-monthly-print, #sticker-print { display: block !important; width: 100% !important; padding: 10px !important; border: none !important; }
                     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                    @page { size: A4 portrait; margin: 10mm; }
+                    @page { size: A4 portrait; margin: 5mm; }
                 }
             `}</style>
 
@@ -337,7 +358,7 @@ export default function AdminDashboard() {
                             <div className="space-y-1 text-right">
                                 <span className="font-black text-xs text-[#D97706] block">طلبية جديدة وصلت</span>
                                 <p className="text-xs font-bold text-emerald-100">
-                                    الزبون: <span className="text-white font-black">{getClientName(newOrderAlert)}</span> ({newOrderAlert.city || 'المغرب'})
+                                    الزبون: <span className="text-white font-black">{getClientName(newOrderAlert)}</span> ({normalizeCity(newOrderAlert.city) || 'المغرب'})
                                 </p>
                                 <p className="text-xs font-black text-amber-200" dir="ltr">
                                     <Phone size={12} className="inline ml-1" />
@@ -370,7 +391,7 @@ export default function AdminDashboard() {
                                     <span>Maison Fakia Admin</span>
                                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping inline-block"></span>
                                 </h1>
-                                <p className="text-[11px] text-emerald-200 font-semibold">لوحة تحكم الطلبيات والـ Devis PDF</p>
+                                <p className="text-[11px] text-emerald-200 font-semibold">إدارة الطلبيات والمخزون وطباعة الملصقات</p>
                             </div>
                         </div>
 
@@ -393,7 +414,7 @@ export default function AdminDashboard() {
                             </button>
                             <button onClick={() => setActiveTab('products')} className={`h-9 px-4 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'products' ? 'bg-[#D97706] text-white shadow-md' : 'text-emerald-200 hover:text-white'}`}>
                                 <ShoppingBag size={15} />
-                                <span>المنتجات ({products.length})</span>
+                                <span>المنتجات والمخزون ({products.length})</span>
                             </button>
                         </div>
 
@@ -516,7 +537,7 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
-                        {/* CLIENT CARDS WITH ZEBRA STRIPING & CLEAR VISUAL SEPARATION */}
+                        {/* CLIENT CARDS */}
                         {loadingOrders ? (
                             <div className="p-12 text-center text-xs font-bold text-slate-400 bg-white rounded-2xl">جاري تحميل الطلبيات...</div>
                         ) : filteredOrders.length === 0 ? (
@@ -532,7 +553,6 @@ export default function AdminDashboard() {
                                     const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
                                     const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${clientName}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
 
-                                    // Zebra Striping: Alternating backgrounds and side accents
                                     const isEven = idx % 2 === 0;
                                     const cardBgClass = isEven
                                         ? 'bg-white border-slate-200/90 border-r-4 border-r-[#1E3A2B]'
@@ -540,62 +560,87 @@ export default function AdminDashboard() {
                                     const infoBoxBgClass = isEven ? 'bg-[#FAF9F6] border-slate-200/80' : 'bg-white border-slate-200/90';
 
                                     return (
-                                        <div key={ord.id} className={`rounded-2xl p-4 sm:p-5 border shadow-xs hover:shadow-md transition space-y-3.5 flex flex-col justify-between ${cardBgClass}`}>
+                                        <div key={ord.id} className={`rounded-2xl p-4 sm:p-5 border shadow-xs hover:shadow-md transition space-y-4 flex flex-col justify-between ${cardBgClass}`}>
 
-                                            <div className="flex items-start justify-between border-b border-slate-200/80 pb-3">
-                                                <div className="flex items-center gap-2.5">
-                                                    <div className={`w-9 h-9 rounded-xl border font-black text-xs flex items-center justify-center shrink-0 ${isEven ? 'bg-[#FAF9F6] border-slate-200 text-[#1E3A2B]' : 'bg-white border-slate-300 text-[#D97706]'}`}>
+                                            {/* CARD HEADER */}
+                                            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200/80 pb-3">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-10 h-10 rounded-xl border font-black text-sm flex items-center justify-center shrink-0 shadow-xs ${isEven ? 'bg-[#FAF9F6] border-slate-200 text-[#1E3A2B]' : 'bg-white border-slate-300 text-[#D97706]'}`}>
                                                         {clientName.charAt(0).toUpperCase()}
                                                     </div>
-                                                    <div>
-                                                        <h3 className="font-black text-[#1E3A2B] text-sm sm:text-base leading-snug">{clientName}</h3>
-                                                        <span className="text-xs font-bold text-[#D97706] flex items-center gap-1" dir="ltr">
+                                                    <div className="space-y-0.5">
+                                                        <h3 className="font-black text-[#1E3A2B] text-base leading-tight">{clientName}</h3>
+                                                        <span className="text-xs font-extrabold text-[#D97706] flex items-center gap-1" dir="ltr">
                                                             <Phone size={12} /> {ord.phone || 'بدون رقم'}
                                                         </span>
                                                     </div>
                                                 </div>
 
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex flex-wrap items-center gap-1.5 justify-end">
                                                     {getStatusBadge(ord.status || 'Pending')}
+
+                                                    <button
+                                                        onClick={() => setStickerOrder(ord)}
+                                                        className="h-8 px-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-extrabold border border-emerald-200 flex items-center gap-1 cursor-pointer transition shrink-0"
+                                                        title="طباعة ملصق التوصيل"
+                                                    >
+                                                        <Tag size={12} />
+                                                        <span>Sticker</span>
+                                                    </button>
+
                                                     <button
                                                         onClick={() => setDevisSingleOrder(ord)}
                                                         className="h-8 px-2.5 bg-amber-50 hover:bg-amber-100 text-[#D97706] rounded-xl text-xs font-extrabold border border-amber-200 flex items-center gap-1 cursor-pointer transition shrink-0"
                                                         title="عرض Devis الزبون"
                                                     >
-                                                        <FileText size={13} />
+                                                        <FileText size={12} />
                                                         <span>Devis</span>
                                                     </button>
                                                 </div>
                                             </div>
 
-                                            <div className={`grid grid-cols-2 gap-3 text-xs p-3 rounded-xl border ${infoBoxBgClass}`}>
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] text-slate-400 font-bold block">المنتج والكمية</span>
-                                                    <p className="font-extrabold text-[#1E3A2B] line-clamp-1">{ord.product_name || 'غرانولا صحية'}</p>
-                                                    <span className="text-[11px] font-bold text-slate-500 block">العدد: {ord.quantity || 1} قطعة</span>
-                                                </div>
+                                            {/* PRODUCT & LOCATION DETAILS BOX */}
+                                            <div className={`p-3.5 rounded-xl border space-y-3 ${infoBoxBgClass}`}>
 
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] text-slate-400 font-bold block">المبلغ الإجمالي</span>
-                                                    <p className="font-black text-[#D97706] text-sm sm:text-base">{ord.total_price || ord.price || 0} DH</p>
-                                                    <span className="text-[10px] text-emerald-700 font-bold block">الدفع عند الاستلام</span>
-                                                </div>
+                                                <div className="grid grid-cols-2 gap-3 text-xs">
+                                                    <div className="space-y-1">
+                                                        <span className="text-[10px] text-slate-400 font-black block uppercase tracking-wider">المنتج والكمية</span>
+                                                        <p className="font-extrabold text-[#1E3A2B] leading-snug">{ord.product_name || 'غرانولا صحية'}</p>
+                                                        <span className="text-[11px] font-bold text-slate-500 block">العدد: {ord.quantity || 1} قطعة</span>
+                                                    </div>
 
-                                                <div className="col-span-2 pt-2 border-t border-slate-200/60 flex items-start gap-1.5 text-slate-600">
-                                                    <MapPin size={14} className="text-[#D97706] shrink-0 mt-0.5" />
-                                                    <div>
-                                                        <span className="font-black text-[#1E3A2B]">{ord.city || 'المدينة غير محددة'}</span>
-                                                        {ord.address && <p className="text-[11px] text-slate-500 font-medium line-clamp-1">{ord.address}</p>}
+                                                    <div className="space-y-1">
+                                                        <span className="text-[10px] text-slate-400 font-black block uppercase tracking-wider">المبلغ الإجمالي</span>
+                                                        <p className="font-black text-[#D97706] text-base">{ord.total_price || ord.price || 0} DH</p>
+                                                        <span className="text-[10px] text-emerald-700 font-bold block">الدفع عند الاستلام (COD)</span>
                                                     </div>
                                                 </div>
+
+                                                {/* CLEAR CITY AND ADDRESS SECTION */}
+                                                <div className="pt-2.5 border-t border-slate-200/80 space-y-1.5 text-xs">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <MapPin size={14} className="text-[#D97706] shrink-0" />
+                                                        <span className="font-extrabold text-[#1E3A2B]">
+                                                            <span className="text-slate-500 font-bold">المدينة: </span>
+                                                            <span className="text-[#D97706] font-black">{normalizeCity(ord.city) || 'غير محددة'}</span>
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="pr-5 text-[11px] text-slate-700 leading-relaxed bg-white/70 p-2 rounded-lg border border-slate-200/60">
+                                                        <span className="font-black text-[#1E3A2B] block mb-0.5">العنوان (Adresse):</span>
+                                                        <span className="font-medium text-slate-700">{ord.address || 'لم يتم تسجيل العنوان التفصيلي'}</span>
+                                                    </div>
+                                                </div>
+
                                             </div>
 
+                                            {/* ACTION CONTROLS */}
                                             <div className="pt-1 flex items-center gap-2">
                                                 <a
                                                     href={waLink}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="flex-1 h-10 bg-[#25D366] hover:bg-emerald-600 text-white rounded-xl flex items-center justify-center gap-2 text-xs font-extrabold shadow-xs transition"
+                                                    className="flex-1 h-10 bg-[#25D366] hover:bg-emerald-600 text-white rounded-xl flex items-center justify-center gap-2 text-xs font-extrabold shadow-xs transition cursor-pointer"
                                                 >
                                                     <MessageCircle size={15} />
                                                     <span>تواصل عبر الواتساب</span>
@@ -622,65 +667,79 @@ export default function AdminDashboard() {
                     </div>
                 )}
 
-                {/* PRODUCTS TAB */}
+                {/* PRODUCTS & STOCK TAB */}
                 {activeTab === 'products' && (
                     <div className="space-y-4">
                         <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
                             <div>
-                                <h2 className="text-base sm:text-lg font-black text-[#1E3A2B]">كتالوج منتجات Maison Fakia</h2>
-                                <p className="text-[11px] text-slate-500">إدارة أكياس الـ Doypack والأسعار المعروضة للزبناء</p>
+                                <h2 className="text-base sm:text-lg font-black text-[#1E3A2B]">كتالوج المنتجات والمخزون (Stock Management)</h2>
+                                <p className="text-[11px] text-slate-500">التحكم فـ كميات الأكياس المتوفرة والتنبيهات عند اقتراب النفاذ</p>
                             </div>
-
-                            <button
-                                onClick={() => setShowAddModal(true)}
-                                className="h-10 px-4 bg-[#D97706] hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition"
-                            >
-                                <Plus size={15} />
-                                <span>منتج جديد</span>
-                            </button>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {products.map((prod) => {
                                 const nameAr = prod.nameAr || prod.name_ar || 'منتج';
                                 const nameFr = prod.nameFr || prod.name_fr || 'Produit';
                                 const image = prod.image || prod.image_url || '/doypack_miel_amandes.png';
+                                const currentStock = prod.stock ?? 10;
+                                const isLowStock = currentStock < 5;
 
                                 return (
-                                    <div key={prod.id} className="bg-white rounded-2xl border border-slate-200 p-3 space-y-3 shadow-xs relative flex flex-col justify-between group">
-                                        <div className="w-full h-36 sm:h-48 bg-[#FAF9F6] rounded-xl overflow-hidden border border-slate-100 relative flex items-center justify-center p-2">
+                                    <div key={prod.id} className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3 shadow-xs relative flex flex-col justify-between group">
+                                        <div className="w-full h-40 bg-[#FAF9F6] rounded-xl overflow-hidden border border-slate-100 relative flex items-center justify-center p-2">
                                             <img
                                                 src={image}
                                                 alt={nameAr}
                                                 className="w-full h-full object-contain group-hover:scale-105 transition duration-500"
                                                 onError={(e: any) => { e.target.src = FALLBACK_IMAGE; }}
                                             />
+                                            {isLowStock && (
+                                                <span className="absolute top-2 right-2 bg-rose-500 text-white text-[10px] font-black px-2 py-1 rounded-full shadow-md flex items-center gap-1 animate-pulse">
+                                                    <AlertTriangle size={11} /> Stock Bas ({currentStock})
+                                                </span>
+                                            )}
                                         </div>
 
                                         <div className="space-y-0.5">
-                                            <h3 className="text-xs sm:text-sm font-black text-[#1E3A2B] line-clamp-1">{nameAr}</h3>
-                                            <p className="text-[10px] sm:text-[11px] text-slate-400 font-semibold truncate">{nameFr}</p>
+                                            <h3 className="text-sm font-black text-[#1E3A2B] line-clamp-1">{nameAr}</h3>
+                                            <p className="text-[11px] text-slate-400 font-semibold truncate">{nameFr}</p>
+                                        </div>
+
+                                        <div className="bg-[#FAF9F6] p-2.5 rounded-xl border border-slate-200/80 flex items-center justify-between">
+                                            <span className="text-xs font-extrabold text-slate-700">المخزون الحالي:</span>
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => updateProductStock(prod.id, currentStock - 1)}
+                                                    className="w-7 h-7 bg-white border border-slate-300 text-slate-700 rounded-lg font-black text-sm flex items-center justify-center hover:bg-slate-100 cursor-pointer"
+                                                >
+                                                    -
+                                                </button>
+                                                <span className={`text-sm font-black w-7 text-center ${isLowStock ? 'text-rose-600' : 'text-[#1E3A2B]'}`}>
+                                                    {currentStock}
+                                                </span>
+                                                <button
+                                                    onClick={() => updateProductStock(prod.id, currentStock + 1)}
+                                                    className="w-7 h-7 bg-[#1E3A2B] text-white rounded-lg font-black text-sm flex items-center justify-center hover:bg-[#D97706] cursor-pointer"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
                                         </div>
 
                                         <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                                             <div>
                                                 <span className="text-[10px] text-slate-400 block font-bold">الثمن</span>
-                                                <span className="text-sm sm:text-base font-black text-[#D97706]">{prod.price} <span className="text-[10px] sm:text-xs">DH</span></span>
+                                                <span className="text-base font-black text-[#D97706]">{prod.price} <span className="text-xs">DH</span></span>
                                             </div>
 
                                             <div className="flex items-center gap-1">
                                                 <button
-                                                    onClick={() => setEditingProduct(prod)}
-                                                    className="h-8 w-8 bg-[#1E3A2B] text-white rounded-lg flex items-center justify-center text-xs font-bold"
-                                                >
-                                                    <Edit3 size={13} />
-                                                </button>
-
-                                                <button
                                                     onClick={() => handleDeleteProduct(prod.id)}
-                                                    className="h-8 w-8 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center text-xs font-bold border border-rose-200"
+                                                    className="h-8 px-2 bg-rose-50 text-rose-600 rounded-lg text-xs font-bold border border-rose-200 flex items-center gap-1 cursor-pointer"
                                                 >
                                                     <Trash2 size={13} />
+                                                    <span>حذف</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -693,7 +752,71 @@ export default function AdminDashboard() {
 
             </main>
 
-            {/* MODAL 1: SINGLE CLIENT DEVIS */}
+            {/* MODAL 1: DELIVERY LABEL / STICKER PRINT */}
+            {stickerOrder && (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+                    <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 border border-slate-200 shadow-2xl relative my-auto">
+
+                        <div id="sticker-print" className="p-4 bg-white border-2 border-dashed border-slate-800 rounded-xl space-y-3.5 text-[#1E3A2B]">
+                            <div className="flex items-center justify-between border-b-2 border-slate-800 pb-2">
+                                <div>
+                                    <h2 className="font-black text-base">MAISON FAKIA</h2>
+                                    <p className="text-[10px] font-bold text-slate-500">Expéditeur: Casablanca, Maroc</p>
+                                </div>
+                                <div className="text-left font-mono text-xs font-black">
+                                    <span>#{stickerOrder.id ? stickerOrder.id.slice(0,6) : 'ORD-01'}</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 bg-[#FAF9F6] p-3 rounded-lg border border-slate-200">
+                                <span className="text-[10px] font-black text-[#D97706] uppercase tracking-wider block">DESTINATAIRE (المرسل إليه):</span>
+
+                                <div className="space-y-1.5 text-xs">
+                                    <p className="font-black text-sm text-[#1E3A2B]">{getClientName(stickerOrder)}</p>
+
+                                    <p className="font-bold text-slate-700 flex items-center gap-1" dir="ltr">
+                                        <Phone size={12} className="text-[#D97706]" />
+                                        <span>{stickerOrder.phone || 'بدون رقم'}</span>
+                                    </p>
+
+                                    <div className="pt-2 border-t border-slate-200 space-y-1">
+                                        <p className="font-extrabold text-[#1E3A2B]">
+                                            <span className="text-slate-500 font-bold">المدينة (Ville): </span>
+                                            <span className="text-[#D97706] font-black">{normalizeCity(stickerOrder.city) || 'المغرب'}</span>
+                                        </p>
+
+                                        <p className="text-slate-800 font-semibold leading-relaxed bg-white p-2 rounded-md border border-slate-200/70">
+                                            <span className="text-[#1E3A2B] font-black block mb-0.5">العنوان (Adresse):</span>
+                                            <span>{stickerOrder.address || 'العنوان غير محدد'}</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1 text-xs">
+                                <span className="text-[10px] font-black text-slate-400 block uppercase">CONTENU (المنتج):</span>
+                                <p className="font-extrabold text-[#1E3A2B]">{stickerOrder.product_name || 'غرانولا صحية'} (x{stickerOrder.quantity || 1})</p>
+                            </div>
+
+                            <div className="bg-[#1E3A2B] text-white p-3 rounded-lg text-center space-y-0.5">
+                                <span className="text-[10px] font-bold text-amber-300 block">MONTANT À COLLECTER (COD):</span>
+                                <span className="text-xl font-black text-white">{stickerOrder.total_price || stickerOrder.price || 0} DH</span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 no-print">
+                            <button onClick={() => setStickerOrder(null)} className="h-9 px-4 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold">إغلاق</button>
+                            <button onClick={() => window.print()} className="h-9 px-4 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-1.5 cursor-pointer">
+                                <Printer size={14} />
+                                <span>طباعة الملصق (Sticker)</span>
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
+
+            {/* MODAL 2: SINGLE CLIENT DEVIS */}
             {devisSingleOrder && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
                     <div className="bg-white rounded-2xl max-w-2xl w-full p-5 sm:p-8 space-y-5 border border-slate-200 shadow-2xl relative my-auto">
@@ -711,11 +834,12 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
 
-                            <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-slate-200 text-xs">
+                            <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-slate-200 text-xs space-y-1">
                                 <span className="font-extrabold text-[#D97706] block mb-1">بيانات الزبون (Client):</span>
                                 <p className="font-black text-[#1E3A2B] text-sm">{getClientName(devisSingleOrder)}</p>
-                                <p className="font-bold text-slate-600 mt-1">الهاتف: {devisSingleOrder.phone}</p>
-                                <p className="font-bold text-slate-600">المدينة: {devisSingleOrder.city}</p>
+                                <p className="font-bold text-slate-600">الهاتف: {devisSingleOrder.phone}</p>
+                                <p className="font-bold text-slate-600">المدينة: {normalizeCity(devisSingleOrder.city)}</p>
+                                <p className="font-bold text-slate-600">العنوان: {devisSingleOrder.address || 'غير محدد'}</p>
                             </div>
 
                             <div className="border border-slate-200 rounded-xl overflow-x-auto">
@@ -765,7 +889,7 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* MODAL 2: MONTHLY DEVIS PRINTABLE */}
+            {/* MODAL 3: MONTHLY DEVIS PRINTABLE */}
             {showMonthlyDevis && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-6 overflow-y-auto">
                     <div className="bg-white rounded-2xl max-w-3xl w-full p-4 sm:p-8 space-y-4 sm:space-y-6 border border-slate-200 shadow-2xl relative my-auto max-h-[92vh] overflow-y-auto">
@@ -800,7 +924,7 @@ export default function AdminDashboard() {
                                         <tr key={o.id}>
                                             <td className="p-2.5 font-bold whitespace-nowrap">{getClientName(o)} <span className="text-[10px] text-slate-500 font-semibold block sm:inline">({o.phone})</span></td>
                                             <td className="p-2.5">{o.product_name || 'غرانولا'}</td>
-                                            <td className="p-2.5 text-center">{o.city || 'المغرب'}</td>
+                                            <td className="p-2.5 text-center">{normalizeCity(o.city) || 'المغرب'}</td>
                                             <td className="p-2.5 text-center font-bold text-[11px]">{o.status || 'Pending'}</td>
                                             <td className="p-2.5 text-left font-black text-[#D97706] whitespace-nowrap">{o.total_price || o.price || 0} DH</td>
                                         </tr>
