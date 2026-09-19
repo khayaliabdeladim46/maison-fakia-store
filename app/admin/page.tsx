@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import {
     Package, Clock, CheckCircle2, Truck, Check,
     Search, MessageCircle, Phone, MapPin,
-    Plus, Trash2, Edit3, Layers, X, ShoppingBag, Wallet,
+    Plus, Trash2, Edit3, Layers, X, ShoppingBag,
     Volume2, Sparkles, FileText, Printer, Calendar, Download, Building2, LogOut
 } from 'lucide-react';
 
@@ -107,6 +107,31 @@ export default function AdminDashboard() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
+    // Auto-unlock AudioContext on first user interaction (Browser Autoplay Policy Fix)
+    useEffect(() => {
+        const unlockAudio = () => {
+            try {
+                if (!audioCtxRef.current) {
+                    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+                    if (AudioCtx) audioCtxRef.current = new AudioCtx();
+                }
+                if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+                    audioCtxRef.current.resume();
+                }
+            } catch (e) {
+                console.log('Audio init error:', e);
+            }
+        };
+
+        window.addEventListener('click', unlockAudio, { once: true });
+        window.addEventListener('touchstart', unlockAudio, { once: true });
+
+        return () => {
+            window.removeEventListener('click', unlockAudio);
+            window.removeEventListener('touchstart', unlockAudio);
+        };
+    }, []);
+
     const handleLogout = async () => {
         try {
             await supabase.auth.signOut();
@@ -123,22 +148,29 @@ export default function AdminDashboard() {
             if (!AudioCtx) return;
             if (!audioCtxRef.current) audioCtxRef.current = new AudioCtx();
             const ctx = audioCtxRef.current;
-            if (ctx.state === 'suspended') ctx.resume();
 
-            const osc1 = ctx.createOscillator();
-            const gain1 = ctx.createGain();
-            osc1.type = 'sine';
-            osc1.frequency.setValueAtTime(587.33, ctx.currentTime);
-            osc1.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
-            gain1.gain.setValueAtTime(0.5, ctx.currentTime);
-            gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
 
-            osc1.connect(gain1);
-            gain1.connect(ctx.destination);
-            osc1.start();
-            osc1.stop(ctx.currentTime + 0.5);
+            const now = ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(587.33, now); // D5
+            osc.frequency.exponentialRampToValueAtTime(880, now + 0.18); // A5
+
+            gain.gain.setValueAtTime(0.6, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.6);
         } catch (e) {
-            console.log('Audio error:', e);
+            console.log('Audio playback error:', e);
         }
     };
 
@@ -367,7 +399,7 @@ export default function AdminDashboard() {
 
                         <button onClick={() => { setSoundEnabled(true); playNotificationChime(); }} className="hidden sm:flex h-9 px-3.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-xl border border-amber-500/40 items-center gap-1.5 text-xs font-bold cursor-pointer transition shrink-0">
                             <Volume2 size={15} />
-                            <span>التنبيهات</span>
+                            <span>اختبار الصوت</span>
                         </button>
 
                         <button
@@ -484,7 +516,7 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
-                        {/* CLIENT SECTION CARDS */}
+                        {/* CLIENT CARDS WITH ZEBRA STRIPING & CLEAR VISUAL SEPARATION */}
                         {loadingOrders ? (
                             <div className="p-12 text-center text-xs font-bold text-slate-400 bg-white rounded-2xl">جاري تحميل الطلبيات...</div>
                         ) : filteredOrders.length === 0 ? (
@@ -494,18 +526,25 @@ export default function AdminDashboard() {
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                {filteredOrders.map((ord) => {
+                                {filteredOrders.map((ord, idx) => {
                                     const clientName = getClientName(ord);
                                     const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
                                     const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
                                     const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${clientName}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
 
-                                    return (
-                                        <div key={ord.id} className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-[#D97706]/40 transition space-y-3.5 flex flex-col justify-between">
+                                    // Zebra Striping: Alternating backgrounds and side accents
+                                    const isEven = idx % 2 === 0;
+                                    const cardBgClass = isEven
+                                        ? 'bg-white border-slate-200/90 border-r-4 border-r-[#1E3A2B]'
+                                        : 'bg-[#F3F1EC] border-slate-300/80 border-r-4 border-r-[#D97706]';
+                                    const infoBoxBgClass = isEven ? 'bg-[#FAF9F6] border-slate-200/80' : 'bg-white border-slate-200/90';
 
-                                            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+                                    return (
+                                        <div key={ord.id} className={`rounded-2xl p-4 sm:p-5 border shadow-xs hover:shadow-md transition space-y-3.5 flex flex-col justify-between ${cardBgClass}`}>
+
+                                            <div className="flex items-start justify-between border-b border-slate-200/80 pb-3">
                                                 <div className="flex items-center gap-2.5">
-                                                    <div className="w-9 h-9 rounded-xl bg-[#FAF9F6] border border-slate-200 text-[#1E3A2B] font-black text-xs flex items-center justify-center shrink-0">
+                                                    <div className={`w-9 h-9 rounded-xl border font-black text-xs flex items-center justify-center shrink-0 ${isEven ? 'bg-[#FAF9F6] border-slate-200 text-[#1E3A2B]' : 'bg-white border-slate-300 text-[#D97706]'}`}>
                                                         {clientName.charAt(0).toUpperCase()}
                                                     </div>
                                                     <div>
@@ -529,7 +568,7 @@ export default function AdminDashboard() {
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-3 text-xs bg-[#FAF9F6] p-3 rounded-xl border border-slate-100">
+                                            <div className={`grid grid-cols-2 gap-3 text-xs p-3 rounded-xl border ${infoBoxBgClass}`}>
                                                 <div className="space-y-1">
                                                     <span className="text-[10px] text-slate-400 font-bold block">المنتج والكمية</span>
                                                     <p className="font-extrabold text-[#1E3A2B] line-clamp-1">{ord.product_name || 'غرانولا صحية'}</p>
@@ -565,7 +604,7 @@ export default function AdminDashboard() {
                                                 <select
                                                     value={ord.status || 'Pending'}
                                                     onChange={(e) => updateOrderStatus(ord.id, e.target.value)}
-                                                    className="h-10 px-3 bg-[#FAF9F6] border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 cursor-pointer focus:outline-none focus:border-[#D97706]"
+                                                    className="h-10 px-3 bg-white border border-slate-300 rounded-xl text-xs font-extrabold text-slate-700 cursor-pointer focus:outline-none focus:border-[#D97706]"
                                                 >
                                                     <option value="Pending">قيد الانتظار</option>
                                                     <option value="Confirmed">تأكيد الكوموند</option>
@@ -726,7 +765,7 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* MODAL 2: MONTHLY DEVIS PRINTABLE (RESPONSIVE FULL FIT FOR MOBILE) */}
+            {/* MODAL 2: MONTHLY DEVIS PRINTABLE */}
             {showMonthlyDevis && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-6 overflow-y-auto">
                     <div className="bg-white rounded-2xl max-w-3xl w-full p-4 sm:p-8 space-y-4 sm:space-y-6 border border-slate-200 shadow-2xl relative my-auto max-h-[92vh] overflow-y-auto">
@@ -745,7 +784,6 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
 
-                            {/* RESPONSIVE TABLE WRAPPER FOR MOBILE */}
                             <div className="border border-slate-200 rounded-xl overflow-x-auto w-full">
                                 <table className="w-full text-right text-xs min-w-[540px]">
                                     <thead className="bg-[#1E3A2B] text-white font-bold">
