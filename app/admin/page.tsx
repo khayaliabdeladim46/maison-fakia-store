@@ -4,24 +4,24 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
     Package, Clock, CheckCircle2, Truck, Check,
-    Search, RefreshCw, MessageCircle, Phone, MapPin,
+    Search, MessageCircle, Phone, MapPin,
     Plus, Trash2, Edit3, Layers, X, ShoppingBag, Wallet,
-    Bell, BellOff, Sparkles
+    Volume2, VolumeX, Sparkles
 } from 'lucide-react';
 
+// صور الـ Doypack الرسمية المعتمدة
 const PACKAGING_PRESETS = [
-    { label: 'أملو & أركان', url: '/images/products/granola-amlou.png' },
-    { label: 'عسل & لوز', url: '/images/products/granola-miel.png' },
-    { label: 'شوكولاتة سوداء', url: '/images/products/granola-[#D97706].png' },
-    { label: 'فواكه جافة', url: '/images/products/mix-fruits-secs.png' },
-    { label: 'كرات الطاقة', url: '/images/products/energy-balls.png' },
-    { label: 'بروتين سبورت', url: '/images/products/granola-pro-sport.png' },
-    { label: 'Doypack أملو', url: '/doypack_amlou_argan.png' },
-    { label: 'Doypack عسل', url: '/doypack_miel_amandes.png' },
+    { label: 'عسل & لوز', url: '/doypack_miel_amandes.png' },
+    { label: 'شوكولاتة سوداء', url: '/doypack_chocolat_noir.png' },
+    { label: 'أملو & أركان', url: '/doypack_amlou_argan.png' },
+    { label: 'فواكه جافة', url: '/doypack_fruits_secs.png' },
+    { label: 'كرات الطاقة', url: '/doypack_energy_balls.png' },
+    { label: 'بروتين سبورت', url: '/doypack_pro_sport.png' },
 ];
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=500&auto=format&fit=crop&q=80';
 
+// قائمة المنتجات الـ 6 الرسمية بـ الـ Doypack الجديد
 const INITIAL_PRODUCTS = [
     {
         id: 'prod-1',
@@ -30,7 +30,7 @@ const INITIAL_PRODUCTS = [
         price: 75,
         weight: '500g',
         category: 'granola',
-        image_url: '/images/products/granola-miel.png',
+        image_url: '/doypack_miel_amandes.png',
         badge_ar: 'الأكثر مبيعاً',
         badge_fr: 'Best Seller'
     },
@@ -41,7 +41,7 @@ const INITIAL_PRODUCTS = [
         price: 80,
         weight: '500g',
         category: 'granola',
-        image_url: '/images/products/granola-chocolat.png',
+        image_url: '/doypack_chocolat_noir.png',
         badge_ar: 'غني بالمغنيسيوم',
         badge_fr: 'Riche en Magnésium'
     },
@@ -52,7 +52,7 @@ const INITIAL_PRODUCTS = [
         price: 85,
         weight: '500g',
         category: 'granola',
-        image_url: '/images/products/granola-amlou.png',
+        image_url: '/doypack_amlou_argan.png',
         badge_ar: 'وصفة تقليدية',
         badge_fr: 'Recette Traditionnelle'
     },
@@ -63,7 +63,7 @@ const INITIAL_PRODUCTS = [
         price: 90,
         weight: '500g',
         category: 'dried_fruits',
-        image_url: '/images/products/mix-fruits-secs.png',
+        image_url: '/doypack_fruits_secs.png',
         badge_ar: 'طاقة طبيعية',
         badge_fr: 'Énergie Naturelle'
     },
@@ -74,7 +74,7 @@ const INITIAL_PRODUCTS = [
         price: 65,
         weight: '400g',
         category: 'energy_balls',
-        image_url: '/images/products/energy-balls.png',
+        image_url: '/doypack_energy_balls.png',
         badge_ar: 'بدون سكر مضاف',
         badge_fr: 'Sans Sucre Ajouté'
     },
@@ -85,7 +85,7 @@ const INITIAL_PRODUCTS = [
         price: 95,
         weight: '500g',
         category: 'granola',
-        image_url: '/images/products/granola-pro-sport.png',
+        image_url: '/doypack_pro_sport.png',
         badge_ar: 'للرياضيين',
         badge_fr: 'Pour Sportifs'
     }
@@ -97,12 +97,13 @@ export default function AdminDashboard() {
     const [products, setProducts] = useState<any[]>(INITIAL_PRODUCTS);
     const [loadingOrders, setLoadingOrders] = useState(true);
 
-    // Notifications & Realtime
+    // Notifications & Audio
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [newOrderAlert, setNewOrderAlert] = useState<any | null>(null);
     const audioCtxRef = useRef<AudioContext | null>(null);
+    const lastOrderIdsRef = useRef<Set<string>>(new Set());
 
-    // Filters & Search
+    // Search & Filter
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState<string>('');
 
@@ -114,13 +115,13 @@ export default function AdminDashboard() {
         price: '',
         weight: '500g',
         category: 'granola',
-        image_url: '/images/products/granola-amlou.png',
+        image_url: '/doypack_miel_amandes.png',
         badge_ar: 'منتج جديد',
         badge_fr: 'Nouveau'
     });
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
-    // تشغيل الصوت مع تجاوز حظر Autoplay فـ المتصفح
+    // Audio Chime Synthesizer
     const playNotificationChime = () => {
         try {
             const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -140,57 +141,69 @@ export default function AdminDashboard() {
             osc1.type = 'sine';
             osc1.frequency.setValueAtTime(587.33, ctx.currentTime);
             osc1.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
-            gain1.gain.setValueAtTime(0.4, ctx.currentTime);
-            gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+            gain1.gain.setValueAtTime(0.5, ctx.currentTime);
+            gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
 
             osc1.connect(gain1);
             gain1.connect(ctx.destination);
             osc1.start();
-            osc1.stop(ctx.currentTime + 0.45);
+            osc1.stop(ctx.currentTime + 0.5);
 
             setTimeout(() => {
                 const osc2 = ctx.createOscillator();
                 const gain2 = ctx.createGain();
                 osc2.type = 'sine';
                 osc2.frequency.setValueAtTime(1174.66, ctx.currentTime);
-                gain2.gain.setValueAtTime(0.25, ctx.currentTime);
-                gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                gain2.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
                 osc2.connect(gain2);
                 gain2.connect(ctx.destination);
                 osc2.start();
-                osc2.stop(ctx.currentTime + 0.3);
-            }, 130);
+                osc2.stop(ctx.currentTime + 0.35);
+            }, 140);
         } catch (e) {
-            console.log('Audio alert trigger:', e);
+            console.log('Audio alert error:', e);
         }
     };
 
-    // ترخيص الصوت أوتوماتيكياً عند أول تفاعل فـ الصفحة
-    useEffect(() => {
-        const unlockAudio = () => {
-            if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-                audioCtxRef.current.resume();
-            }
-        };
-        window.addEventListener('click', unlockAudio, { once: true });
-        return () => window.removeEventListener('click', unlockAudio);
-    }, []);
+    const handleNewOrderIncoming = (freshOrder: any) => {
+        if (!freshOrder || !freshOrder.id) return;
+        if (lastOrderIdsRef.current.has(freshOrder.id)) return;
 
-    // 1. جلب الطلبات
-    const fetchOrders = async () => {
-        setLoadingOrders(true);
+        lastOrderIdsRef.current.add(freshOrder.id);
+        setOrders((prev) => [freshOrder, ...prev.filter(o => o.id !== freshOrder.id)]);
+
+        if (soundEnabled) {
+            playNotificationChime();
+        }
+
+        setNewOrderAlert(freshOrder);
+        setTimeout(() => setNewOrderAlert(null), 12000);
+    };
+
+    const fetchOrders = async (isInitial = false) => {
+        if (isInitial) setLoadingOrders(true);
         const { data, error } = await supabase
             .from('orders')
             .select('*')
             .order('created_at', { ascending: false });
 
         if (!error && data) {
-            setOrders(data);
+            if (isInitial) {
+                data.forEach(o => lastOrderIdsRef.current.add(o.id));
+                setOrders(data);
+            } else {
+                data.forEach(o => {
+                    if (!lastOrderIdsRef.current.has(o.id)) {
+                        handleNewOrderIncoming(o);
+                    }
+                });
+                setOrders(data);
+            }
         }
-        setLoadingOrders(false);
+        if (isInitial) setLoadingOrders(false);
     };
 
-    // 2. جلب المنتجات
     const fetchProducts = async () => {
         const { data, error } = await supabase
             .from('products')
@@ -204,9 +217,8 @@ export default function AdminDashboard() {
         }
     };
 
-    // 3. التسمع المباشر للطلبات الجديدة
     useEffect(() => {
-        fetchOrders();
+        fetchOrders(true);
         fetchProducts();
 
         const channel = supabase
@@ -215,21 +227,18 @@ export default function AdminDashboard() {
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'orders' },
                 (payload) => {
-                    const freshOrder = payload.new;
-                    setOrders((prev) => [freshOrder, ...prev]);
-
-                    if (soundEnabled) {
-                        playNotificationChime();
-                    }
-
-                    setNewOrderAlert(freshOrder);
-                    setTimeout(() => setNewOrderAlert(null), 10000);
+                    handleNewOrderIncoming(payload.new);
                 }
             )
             .subscribe();
 
+        const pollingInterval = setInterval(() => {
+            fetchOrders(false);
+        }, 10000);
+
         return () => {
             supabase.removeChannel(channel);
+            clearInterval(pollingInterval);
         };
     }, [soundEnabled]);
 
@@ -262,7 +271,7 @@ export default function AdminDashboard() {
             price: parseFloat(newProduct.price),
             weight: newProduct.weight || '500g',
             category: newProduct.category,
-            image_url: newProduct.image_url || '/images/products/granola-amlou.png',
+            image_url: newProduct.image_url || '/doypack_miel_amandes.png',
             badge_ar: newProduct.badge_ar,
             badge_fr: newProduct.badge_fr
         };
@@ -282,7 +291,7 @@ export default function AdminDashboard() {
             price: '',
             weight: '500g',
             category: 'granola',
-            image_url: '/images/products/granola-amlou.png',
+            image_url: '/doypack_miel_amandes.png',
             badge_ar: 'منتج جديد',
             badge_fr: 'Nouveau'
         });
@@ -346,39 +355,38 @@ export default function AdminDashboard() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'Confirmed':
-                return <span className="px-3 py-1 bg-blue-100 text-blue-900 rounded-full text-xs font-black flex items-center gap-1 w-fit border border-blue-200"><CheckCircle2 size={12}/> مؤكدة</span>;
+                return <span className="px-2.5 py-1 bg-blue-100 text-blue-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-blue-200"><CheckCircle2 size={12}/> مؤكدة</span>;
             case 'Shipped':
-                return <span className="px-3 py-1 bg-purple-100 text-purple-900 rounded-full text-xs font-black flex items-center gap-1 w-fit border border-purple-200"><Truck size={12}/> في الطريق</span>;
+                return <span className="px-2.5 py-1 bg-purple-100 text-purple-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-purple-200"><Truck size={12}/> في الطريق</span>;
             case 'Delivered':
-                return <span className="px-3 py-1 bg-emerald-100 text-emerald-900 rounded-full text-xs font-black flex items-center gap-1 w-fit border border-emerald-200"><Check size={12}/> تم التسليم</span>;
+                return <span className="px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-emerald-200"><Check size={12}/> تم التسليم</span>;
             default:
-                return <span className="px-3 py-1 bg-amber-100 text-amber-900 rounded-full text-xs font-black flex items-center gap-1 w-fit border border-amber-200"><Clock size={12}/> قيد الانتظار</span>;
+                return <span className="px-2.5 py-1 bg-amber-100 text-amber-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-amber-200"><Clock size={12}/> قيد الانتظار</span>;
         }
     };
 
     return (
-        <div dir="rtl" className="min-h-screen bg-[#FAF9F6] text-[#1E3A2B] font-sans pb-20 relative">
+        <div dir="rtl" className="min-h-screen bg-[#FAF9F6] text-[#1E3A2B] font-sans pb-24 relative">
 
-            {/* POPUP NOTIFICATION TOAST WITH COMPLETE NUMBERS & PHONE */}
+            {/* POPUP NOTIFICATION TOAST */}
             {newOrderAlert && (
-                <div className="fixed top-20 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-50 animate-bounce duration-500">
+                <div className="fixed top-16 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-50 animate-bounce duration-500">
                     <div className="bg-[#1E3A2B] border-2 border-[#D97706] text-white p-4 rounded-3xl shadow-2xl flex items-start justify-between gap-3 backdrop-blur-md">
                         <div className="flex items-start gap-3">
                             <div className="w-10 h-10 bg-[#D97706] rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md">
                                 <Sparkles size={20} className="animate-spin" />
                             </div>
                             <div className="space-y-1 text-right">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-black text-sm text-[#D97706]">🎉 طلبية جديدة وصلت!</span>
-                                </div>
+                                <span className="font-black text-xs text-[#D97706] block">طلبية جديدة وصلت</span>
                                 <p className="text-xs font-bold text-emerald-100">
                                     الزبون: <span className="text-white font-black">{newOrderAlert.full_name || 'زبون جديد'}</span> ({newOrderAlert.city || 'المغرب'})
                                 </p>
                                 <p className="text-xs font-black text-amber-200" dir="ltr">
-                                    📞 <span className="text-white">{newOrderAlert.phone || 'بدون رقم'}</span>
+                                    <Phone size={12} className="inline ml-1" />
+                                    <span className="text-white">{newOrderAlert.phone || 'بدون رقم'}</span>
                                 </p>
                                 <p className="text-xs font-black text-emerald-300">
-                                    📦 {newOrderAlert.product_name || 'غرانولا'} • <span className="text-amber-300 font-black text-sm">{newOrderAlert.total_price || newOrderAlert.price || 0} DH</span> (الكمية: {newOrderAlert.quantity || 1})
+                                    {newOrderAlert.product_name || 'غرانولا'} • <span className="text-amber-300 font-black text-sm">{newOrderAlert.total_price || newOrderAlert.price || 0} DH</span>
                                 </p>
                             </div>
                         </div>
@@ -393,44 +401,48 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* Header */}
-            <header className="bg-[#1E3A2B] text-white py-4 px-6 shadow-xl border-b border-[#D97706]/40 sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
-                <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* HEADER DESIGN */}
+            <header className="bg-[#1E3A2B] text-white py-3.5 px-4 sm:px-6 shadow-xl border-b border-[#D97706]/30 sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
+                <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
 
-                    <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 bg-gradient-to-tr from-[#D97706] to-amber-500 text-white rounded-2xl flex items-center justify-center font-black text-lg shadow-lg border border-amber-300/30">
-                            MF
+                    {/* Logo & Title */}
+                    <div className="flex items-center justify-between w-full sm:w-auto">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gradient-to-tr from-[#D97706] to-amber-500 text-white rounded-2xl flex items-center justify-center font-black text-base shadow-lg border border-amber-300/30">
+                                MF
+                            </div>
+                            <div>
+                                <h1 className="text-sm sm:text-base font-black tracking-tight flex items-center gap-2">
+                                    <span>Maison Fakia Admin</span>
+                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block"></span>
+                                </h1>
+                                <p className="text-[10px] text-emerald-200/90 font-semibold">لوحة تحكم الطلبيات والكتالوج</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-base sm:text-xl font-black tracking-tight flex items-center gap-2">
-                                <span>لوحة إدارة Maison Fakia</span>
-                                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping inline-block" title="Realtime Active"></span>
-                            </h1>
-                            <p className="text-[11px] text-emerald-200/90 font-semibold">إدارة المبيعات والمنتجات لايف • Live COD Dashboard</p>
+
+                        {/* Sound Button Mobile */}
+                        <div className="sm:hidden">
+                            <button
+                                onClick={() => {
+                                    setSoundEnabled(true);
+                                    playNotificationChime();
+                                }}
+                                className="p-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-2xl border border-amber-500/40 transition flex items-center justify-center cursor-pointer active:scale-95"
+                                title="تفعيل وتجربة الصوت"
+                            >
+                                <Volume2 size={18} />
+                            </button>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => {
-                                setSoundEnabled(!soundEnabled);
-                                if (!soundEnabled) playNotificationChime();
-                            }}
-                            className={`p-2.5 rounded-2xl border transition flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
-                                soundEnabled
-                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-                                    : 'bg-emerald-900/60 text-slate-400 border-emerald-800'
-                            }`}
-                            title={soundEnabled ? 'تنبيهات الصوت مفعلة' : 'تنبيهات الصوت مكتومة'}
-                        >
-                            {soundEnabled ? <Bell size={16} className="animate-wiggle" /> : <BellOff size={16} />}
-                            <span className="hidden sm:inline">{soundEnabled ? 'الصوت مفعّل' : 'مكتوم'}</span>
-                        </button>
+                    {/* Navigation Tabs + Sound Desktop */}
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
 
-                        <div className="flex items-center bg-emerald-950/90 p-1 rounded-2xl border border-emerald-800/80 shadow-inner">
+                        {/* Tab Switcher */}
+                        <div className="grid grid-cols-2 w-full sm:w-auto bg-emerald-950/80 p-1 rounded-2xl border border-emerald-800/80 shadow-inner">
                             <button
                                 onClick={() => setActiveTab('orders')}
-                                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-2 cursor-pointer ${
+                                className={`py-2 px-4 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-2 cursor-pointer ${
                                     activeTab === 'orders'
                                         ? 'bg-[#D97706] text-white shadow-md'
                                         : 'text-emerald-200 hover:text-white'
@@ -442,7 +454,7 @@ export default function AdminDashboard() {
 
                             <button
                                 onClick={() => setActiveTab('products')}
-                                className={`px-4 py-2 rounded-xl text-xs font-extrabold transition flex items-center gap-2 cursor-pointer ${
+                                className={`py-2 px-4 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-2 cursor-pointer ${
                                     activeTab === 'products'
                                         ? 'bg-[#D97706] text-white shadow-md'
                                         : 'text-emerald-200 hover:text-white'
@@ -452,59 +464,72 @@ export default function AdminDashboard() {
                                 <span>المنتجات ({products.length})</span>
                             </button>
                         </div>
+
+                        {/* Sound Button Desktop */}
+                        <button
+                            onClick={() => {
+                                setSoundEnabled(true);
+                                playNotificationChime();
+                            }}
+                            className="hidden sm:flex px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-2xl border border-amber-500/40 transition items-center gap-2 text-xs font-bold cursor-pointer active:scale-95 whitespace-nowrap"
+                        >
+                            <Volume2 size={16} />
+                            <span>تفعيل الصوت</span>
+                        </button>
+
                     </div>
 
                 </div>
             </header>
 
-            {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-8 mt-8 space-y-6">
+            {/* MAIN DASHBOARD CONTENT */}
+            <main className="max-w-7xl mx-auto px-3 sm:px-8 mt-5 space-y-5">
 
                 {/* METRICS CARDS */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
 
-                    <div className="bg-white p-6 rounded-3xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/40 via-white to-amber-50/20 shadow-xs space-y-2 relative overflow-hidden">
+                    <div className="bg-white p-4 sm:p-6 rounded-3xl border border-emerald-200/90 bg-gradient-to-br from-emerald-50/40 via-white to-amber-50/20 shadow-xs space-y-1">
                         <div className="flex items-center justify-between text-emerald-800">
-                            <span className="text-xs font-bold block">المداخيل المؤكدة (C.A)</span>
-                            <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-[#D97706]">
-                                <Wallet size={18} />
+                            <span className="text-[11px] sm:text-xs font-bold block">المداخيل (C.A)</span>
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-100 flex items-center justify-center text-[#D97706]">
+                                <Wallet size={16} />
                             </div>
                         </div>
-                        <span className="text-2xl sm:text-3xl font-black text-[#1E3A2B] block">
-                            {confirmedRevenue.toLocaleString()} <span className="text-xs text-[#D97706] font-extrabold">DH</span>
+                        <span className="text-xl sm:text-3xl font-black text-[#1E3A2B] block">
+                            {confirmedRevenue.toLocaleString()} <span className="text-xs text-[#D97706]">DH</span>
                         </span>
-                        <span className="text-[10px] text-slate-400 font-medium block">تضمن الطلبات المؤكدة والمسلّمة فقط</span>
+                        <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium block">المؤكدة والمسلمة</span>
                     </div>
 
-                    <div className="bg-white p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-2">
+                    <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/90 shadow-xs space-y-1">
                         <div className="flex items-center justify-between text-slate-500">
-                            <span className="text-xs font-bold block">إجمالي الطلبات</span>
-                            <Package size={18} className="text-slate-400" />
+                            <span className="text-[11px] sm:text-xs font-bold block">إجمالي الطلبات</span>
+                            <Package size={16} className="text-slate-400" />
                         </div>
-                        <span className="text-2xl sm:text-3xl font-black text-[#1E3A2B] block">{orders.length}</span>
-                        <span className="text-[10px] text-slate-400 font-medium block">كل الطلبيات الواردة</span>
+                        <span className="text-xl sm:text-3xl font-black text-[#1E3A2B] block">{orders.length}</span>
+                        <span className="text-[9px] sm:text-[10px] text-slate-400 font-medium block">كل الطلبيات</span>
                     </div>
 
-                    <div className="bg-white p-6 rounded-3xl border border-amber-200/90 bg-amber-50/10 shadow-xs space-y-2">
+                    <div className="bg-white p-4 sm:p-6 rounded-3xl border border-amber-200/90 bg-amber-50/10 shadow-xs space-y-1">
                         <div className="flex items-center justify-between text-amber-700">
-                            <span className="text-xs font-bold block">قيد الانتظار (Pending)</span>
-                            <Clock size={18} className="text-amber-500" />
+                            <span className="text-[11px] sm:text-xs font-bold block">قيد الانتظار</span>
+                            <Clock size={16} className="text-amber-500" />
                         </div>
-                        <span className="text-2xl sm:text-3xl font-black text-amber-600 block">
+                        <span className="text-xl sm:text-3xl font-black text-amber-600 block">
                             {orders.filter(o => !o.status || o.status === 'Pending').length}
                         </span>
-                        <span className="text-[10px] text-amber-700/70 font-semibold block">تحتاج لتأكيد الهاتف والواتساب</span>
+                        <span className="text-[9px] sm:text-[10px] text-amber-700/70 font-semibold block">تتطلب تأكيد</span>
                     </div>
 
-                    <div className="bg-white p-6 rounded-3xl border border-emerald-200/90 bg-emerald-50/10 shadow-xs space-y-2">
+                    <div className="bg-white p-4 sm:p-6 rounded-3xl border border-emerald-200/90 bg-emerald-50/10 shadow-xs space-y-1">
                         <div className="flex items-center justify-between text-emerald-700">
-                            <span className="text-xs font-bold block">تم التسليم (Delivered)</span>
-                            <CheckCircle2 size={18} className="text-emerald-600" />
+                            <span className="text-[11px] sm:text-xs font-bold block">تم التسليم</span>
+                            <CheckCircle2 size={16} className="text-emerald-600" />
                         </div>
-                        <span className="text-2xl sm:text-3xl font-black text-emerald-600 block">
+                        <span className="text-xl sm:text-3xl font-black text-emerald-600 block">
                             {orders.filter(o => o.status === 'Delivered').length}
                         </span>
-                        <span className="text-[10px] text-emerald-700/70 font-semibold block">طلبيات مكتملة ومقبوضة</span>
+                        <span className="text-[9px] sm:text-[10px] text-emerald-700/70 font-semibold block">طلبيات مقبوضة</span>
                     </div>
 
                 </div>
@@ -513,154 +538,225 @@ export default function AdminDashboard() {
                 {activeTab === 'orders' && (
                     <div className="space-y-4">
 
-                        <div className="bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+                        {/* Search & Filter Options */}
+                        <div className="bg-white p-3.5 sm:p-4 rounded-3xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
 
                             <div className="relative w-full sm:w-80">
                                 <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                 <input
                                     type="text"
-                                    placeholder="بحث بالاسم، رقم الهاتف، أو المدينة..."
+                                    placeholder="بحث بالاسم، الرقم، أو المدينة..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pr-10 pl-4 py-2.5 bg-[#FAF9F6] border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:border-[#D97706]"
+                                    className="w-full pr-10 pl-4 py-2 bg-[#FAF9F6] border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:border-[#D97706]"
                                 />
                             </div>
 
-                            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto text-xs font-bold">
+                            <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto text-xs font-bold pb-1 sm:pb-0">
                                 {['all', 'Pending', 'Confirmed', 'Shipped', 'Delivered'].map((st) => (
                                     <button
                                         key={st}
                                         onClick={() => setFilterStatus(st)}
-                                        className={`px-3.5 py-2 rounded-xl transition cursor-pointer whitespace-nowrap ${
+                                        className={`px-3 py-1.5 rounded-xl transition cursor-pointer whitespace-nowrap text-[11px] ${
                                             filterStatus === st
                                                 ? 'bg-[#1E3A2B] text-white shadow-xs'
                                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                                         }`}
                                     >
-                                        {st === 'all' ? 'الكل' : st === 'Pending' ? 'قيد الانتظار' : st === 'Confirmed' ? 'مؤكدة' : st === 'Shipped' ? 'فـ الطريق' : 'تم التسليم'}
+                                        {st === 'all' ? 'الكل' : st === 'Pending' ? 'الانتظار' : st === 'Confirmed' ? 'مؤكدة' : st === 'Shipped' ? 'فـ الطريق' : 'مسلّمة'}
                                     </button>
                                 ))}
                             </div>
 
                         </div>
 
-                        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
-                            {loadingOrders ? (
-                                <div className="p-12 text-center text-xs font-bold text-slate-400">جاري تحميل الطلبيات...</div>
-                            ) : filteredOrders.length === 0 ? (
-                                <div className="p-12 text-center space-y-2">
-                                    <Package size={36} className="mx-auto text-slate-300" />
-                                    <p className="text-xs font-bold text-slate-500">لا توجد طلبيات مطابقة لهذا البحث حالياً.</p>
-                                </div>
-                            ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-right text-xs">
-                                        <thead className="bg-[#FAF9F6] text-slate-600 font-black border-b border-slate-200">
-                                        <tr>
-                                            <th className="p-4">الزبون والهاتف</th>
-                                            <th className="p-4">المنتج والكمية</th>
-                                            <th className="p-4">المبلغ الإجمالي</th>
-                                            <th className="p-4">المدينة والعنوان</th>
-                                            <th className="p-4">الحالة</th>
-                                            <th className="p-4 text-center">التواصل والإجراءات</th>
-                                        </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 font-medium">
-                                        {filteredOrders.map((ord) => {
-                                            const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
-                                            const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
-                                            const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${ord.full_name || ''}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
+                        {/* ORDERS LIST */}
+                        {loadingOrders ? (
+                            <div className="p-12 text-center text-xs font-bold text-slate-400 bg-white rounded-3xl">جاري تحميل الطلبيات...</div>
+                        ) : filteredOrders.length === 0 ? (
+                            <div className="p-12 text-center space-y-2 bg-white rounded-3xl">
+                                <Package size={36} className="mx-auto text-slate-300" />
+                                <p className="text-xs font-bold text-slate-500">لا توجد طلبيات مطابقة للبحث حالياً.</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* 📱 MOBILE CARD VIEW */}
+                                <div className="block sm:hidden space-y-3">
+                                    {filteredOrders.map((ord) => {
+                                        const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
+                                        const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
+                                        const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${ord.full_name || ''}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
 
-                                            return (
-                                                <tr key={ord.id} className="hover:bg-amber-50/20 transition">
-                                                    <td className="p-4 space-y-1">
-                                                        <span className="font-extrabold text-[#1E3A2B] block text-sm">{ord.full_name || 'بدون اسم'}</span>
-                                                        <span className="text-[11px] text-slate-500 flex items-center gap-1 font-bold" dir="ltr">
-                                                                <Phone size={12} className="text-[#D97706]" /> {ord.phone}
-                                                            </span>
-                                                    </td>
+                                        return (
+                                            <div key={ord.id} className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-xs space-y-3">
 
-                                                    <td className="p-4 space-y-1">
-                                                        <span className="font-extrabold text-[#1E3A2B] block">{ord.product_name || 'منتج غير محدد'}</span>
-                                                        <span className="text-[10px] text-slate-400 font-bold block">الكمية: {ord.quantity || 1}</span>
-                                                    </td>
+                                                <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">
+                                                    <div>
+                                                        <h3 className="font-extrabold text-[#1E3A2B] text-sm">{ord.full_name || 'زبون بدون اسم'}</h3>
+                                                        <span className="text-xs font-bold text-[#D97706] flex items-center gap-1 mt-0.5" dir="ltr">
+                                                            <Phone size={12} /> {ord.phone}
+                                                        </span>
+                                                    </div>
+                                                    {getStatusBadge(ord.status || 'Pending')}
+                                                </div>
 
-                                                    <td className="p-4">
+                                                <div className="space-y-1.5 text-xs">
+                                                    <div className="flex items-center justify-between text-slate-700">
+                                                        <span className="font-extrabold text-[#1E3A2B]">{ord.product_name || 'منتج غير محدد'}</span>
                                                         <span className="font-black text-[#D97706] text-sm">{ord.total_price || ord.price || 0} DH</span>
-                                                    </td>
+                                                    </div>
 
-                                                    <td className="p-4 space-y-1">
-                                                            <span className="font-bold text-slate-700 block flex items-center gap-1">
-                                                                <MapPin size={12} className="text-[#D97706]" /> {ord.city || 'غير محددة'}
-                                                            </span>
-                                                        <span className="text-[10px] text-slate-400 block max-w-xs truncate">{ord.address}</span>
-                                                    </td>
+                                                    <div className="flex items-center justify-between text-[11px] text-slate-500">
+                                                        <span className="flex items-center gap-1 font-semibold">
+                                                            <MapPin size={12} className="text-[#D97706]" /> {ord.city || 'غير محددة'}
+                                                        </span>
+                                                        <span className="font-bold">الكمية: {ord.quantity || 1}</span>
+                                                    </div>
 
-                                                    <td className="p-4">
-                                                        {getStatusBadge(ord.status || 'Pending')}
-                                                    </td>
+                                                    {ord.address && (
+                                                        <p className="text-[10px] text-slate-400 truncate">{ord.address}</p>
+                                                    )}
+                                                </div>
 
-                                                    <td className="p-4">
-                                                        <div className="flex items-center justify-center gap-2">
-                                                            <a
-                                                                href={waLink}
-                                                                target="_blank"
-                                                                rel="noreferrer"
-                                                                className="p-2 bg-[#25D366] hover:bg-[#1ebd59] text-white rounded-xl transition shadow-xs flex items-center gap-1 text-[11px] font-bold"
-                                                                title="تواصل مباشر عبر الواتساب"
-                                                            >
-                                                                <MessageCircle size={14} />
-                                                                <span>واتساب</span>
-                                                            </a>
+                                                <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
+                                                    <a
+                                                        href={waLink}
+                                                        target="_blank"
+                                                        rel="noreferrer"
+                                                        className="flex-1 py-2.5 bg-[#25D366] hover:bg-[#1ebd59] text-white rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 text-xs font-bold"
+                                                    >
+                                                        <MessageCircle size={15} />
+                                                        <span>تواصل بالواتساب</span>
+                                                    </a>
 
-                                                            <select
-                                                                value={ord.status || 'Pending'}
-                                                                onChange={(e) => updateOrderStatus(ord.id, e.target.value)}
-                                                                className="px-2.5 py-1.5 bg-[#FAF9F6] border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 focus:outline-none focus:border-[#D97706]"
-                                                            >
-                                                                <option value="Pending">قيد الانتظار</option>
-                                                                <option value="Confirmed">تأكيد الكوموند</option>
-                                                                <option value="Shipped">خرجت للتوصيل</option>
-                                                                <option value="Delivered">تم التسليم</option>
-                                                            </select>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                        </tbody>
-                                    </table>
+                                                    <select
+                                                        value={ord.status || 'Pending'}
+                                                        onChange={(e) => updateOrderStatus(ord.id, e.target.value)}
+                                                        className="py-2.5 px-3 bg-[#FAF9F6] border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-[#D97706]"
+                                                    >
+                                                        <option value="Pending">انتظار</option>
+                                                        <option value="Confirmed">تأكيد</option>
+                                                        <option value="Shipped">في الطريق</option>
+                                                        <option value="Delivered">تم التسليم</option>
+                                                    </select>
+                                                </div>
+
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            )}
-                        </div>
+
+                                {/* 💻 DESKTOP TABLE VIEW */}
+                                <div className="hidden sm:block bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-right text-xs">
+                                            <thead className="bg-[#FAF9F6] text-slate-600 font-black border-b border-slate-200">
+                                            <tr>
+                                                <th className="p-4">الزبون والهاتف</th>
+                                                <th className="p-4">المنتج والكمية</th>
+                                                <th className="p-4">المبلغ الإجمالي</th>
+                                                <th className="p-4">المدينة والعنوان</th>
+                                                <th className="p-4">الحالة</th>
+                                                <th className="p-4 text-center">التواصل والإجراءات</th>
+                                            </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 font-medium">
+                                            {filteredOrders.map((ord) => {
+                                                const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
+                                                const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
+                                                const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${ord.full_name || ''}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
+
+                                                return (
+                                                    <tr key={ord.id} className="hover:bg-amber-50/20 transition">
+                                                        <td className="p-4 space-y-1">
+                                                            <span className="font-extrabold text-[#1E3A2B] block text-sm">{ord.full_name || 'بدون اسم'}</span>
+                                                            <span className="text-[11px] text-slate-500 flex items-center gap-1 font-bold" dir="ltr">
+                                                                    <Phone size={12} className="text-[#D97706]" /> {ord.phone}
+                                                                </span>
+                                                        </td>
+
+                                                        <td className="p-4 space-y-1">
+                                                            <span className="font-extrabold text-[#1E3A2B] block">{ord.product_name || 'منتج غير محدد'}</span>
+                                                            <span className="text-[10px] text-slate-400 font-bold block">الكمية: {ord.quantity || 1}</span>
+                                                        </td>
+
+                                                        <td className="p-4">
+                                                            <span className="font-black text-[#D97706] text-sm">{ord.total_price || ord.price || 0} DH</span>
+                                                        </td>
+
+                                                        <td className="p-4 space-y-1">
+                                                                <span className="font-bold text-slate-700 block flex items-center gap-1">
+                                                                    <MapPin size={12} className="text-[#D97706]" /> {ord.city || 'غير محددة'}
+                                                                </span>
+                                                            <span className="text-[10px] text-slate-400 block max-w-xs truncate">{ord.address}</span>
+                                                        </td>
+
+                                                        <td className="p-4">
+                                                            {getStatusBadge(ord.status || 'Pending')}
+                                                        </td>
+
+                                                        <td className="p-4">
+                                                            <div className="flex items-center justify-center gap-2">
+                                                                <a
+                                                                    href={waLink}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                    className="p-2 bg-[#25D366] hover:bg-[#1ebd59] text-white rounded-xl transition shadow-xs flex items-center gap-1 text-[11px] font-bold"
+                                                                >
+                                                                    <MessageCircle size={14} />
+                                                                    <span>واتساب</span>
+                                                                </a>
+
+                                                                <select
+                                                                    value={ord.status || 'Pending'}
+                                                                    onChange={(e) => updateOrderStatus(ord.id, e.target.value)}
+                                                                    className="px-2.5 py-1.5 bg-[#FAF9F6] border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 focus:outline-none focus:border-[#D97706]"
+                                                                >
+                                                                    <option value="Pending">قيد الانتظار</option>
+                                                                    <option value="Confirmed">تأكيد الكوموند</option>
+                                                                    <option value="Shipped">خرجت للتوصيل</option>
+                                                                    <option value="Delivered">تم التسليم</option>
+                                                                </select>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </>
+                        )}
 
                     </div>
                 )}
 
-                {/* TAB 2: PRODUCTS */}
+                {/* TAB 2: PRODUCTS (WITH NEW DOYPACK PACKAGING IMAGES) */}
                 {activeTab === 'products' && (
-                    <div className="space-y-6">
+                    <div className="space-y-4">
 
-                        <div className="flex items-center justify-between bg-white p-5 rounded-3xl border border-slate-200/80 shadow-xs">
+                        <div className="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200/80 shadow-xs">
                             <div>
-                                <h2 className="text-lg font-black text-[#1E3A2B]">كتالوج منتجات Maison Fakia</h2>
-                                <p className="text-xs text-slate-500">إدارة الأكياس والأسعار والشارات المعروضة للزبناء</p>
+                                <h2 className="text-base sm:text-lg font-black text-[#1E3A2B]">كتالوج منتجات Maison Fakia</h2>
+                                <p className="text-[11px] text-slate-500">إدارة أكياس الـ Doypack والأسعار المعروضة للزبناء</p>
                             </div>
 
                             <button
                                 onClick={() => setShowAddModal(true)}
-                                className="px-5 py-3 bg-[#D97706] hover:bg-amber-600 text-white font-extrabold text-xs rounded-2xl transition shadow-md flex items-center gap-2 cursor-pointer"
+                                className="px-4 py-2.5 bg-[#D97706] hover:bg-amber-600 text-white font-extrabold text-xs rounded-2xl transition shadow-md flex items-center gap-1.5 cursor-pointer"
                             >
-                                <Plus size={16} />
-                                <span>إضافة منتج جديد (+ Produit)</span>
+                                <Plus size={15} />
+                                <span>+ منتج جديد</span>
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {products.map((prod) => (
-                                <div key={prod.id} className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4 shadow-xs relative flex flex-col justify-between group">
+                                <div key={prod.id} className="bg-white rounded-3xl border border-slate-200 p-4 space-y-3 shadow-xs relative flex flex-col justify-between group">
 
-                                    <div className="w-full h-56 bg-[#FAF9F6] rounded-2xl overflow-hidden border border-slate-100 relative flex items-center justify-center p-2">
+                                    {/* Doypack Packaging Preview Image */}
+                                    <div className="w-full h-52 bg-[#FAF9F6] rounded-2xl overflow-hidden border border-slate-100 relative flex items-center justify-center p-2">
                                         {(prod.badge_ar || prod.badge_fr) && (
                                             <span className="absolute top-3 right-3 bg-[#D97706] text-white px-2.5 py-1 rounded-full text-[10px] font-black z-10 shadow-xs">
                                                 {prod.badge_ar || prod.badge_fr}
@@ -671,28 +767,28 @@ export default function AdminDashboard() {
                                         </span>
 
                                         <img
-                                            src={prod.image_url || prod.image || '/images/products/granola-amlou.png'}
+                                            src={prod.image_url || prod.image || '/doypack_miel_amandes.png'}
                                             alt={prod.name_ar}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition duration-500 rounded-xl"
+                                            className="w-full h-full object-contain hover:scale-105 transition duration-500"
                                             onError={(e: any) => { e.target.src = FALLBACK_IMAGE; }}
                                         />
                                     </div>
 
-                                    <div className="space-y-1">
-                                        <h3 className="text-base font-black text-[#1E3A2B]">{prod.name_ar}</h3>
-                                        <p className="text-xs text-slate-400 font-semibold">{prod.name_fr}</p>
+                                    <div className="space-y-0.5">
+                                        <h3 className="text-sm font-black text-[#1E3A2B]">{prod.name_ar}</h3>
+                                        <p className="text-[11px] text-slate-400 font-semibold">{prod.name_fr}</p>
                                     </div>
 
-                                    <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                                         <div>
                                             <span className="text-[10px] text-slate-400 block font-bold">الثمن</span>
-                                            <span className="text-xl font-black text-[#D97706]">{prod.price} <span className="text-xs">DH</span></span>
+                                            <span className="text-lg font-black text-[#D97706]">{prod.price} <span className="text-xs">DH</span></span>
                                         </div>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5">
                                             <button
                                                 onClick={() => setEditingProduct(prod)}
-                                                className="px-3 py-2 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+                                                className="px-3 py-2 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                                             >
                                                 <Edit3 size={13} />
                                                 <span>تعديل</span>
@@ -700,8 +796,7 @@ export default function AdminDashboard() {
 
                                             <button
                                                 onClick={() => handleDeleteProduct(prod.id)}
-                                                className="px-2.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer border border-rose-200"
-                                                title="مسح المنتج"
+                                                className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition flex items-center cursor-pointer border border-rose-200"
                                             >
                                                 <Trash2 size={13} />
                                             </button>
@@ -717,18 +812,18 @@ export default function AdminDashboard() {
 
             </main>
 
-            {/* MODAL 1: ADD */}
+            {/* MODAL 1: ADD PRODUCT */}
             {showAddModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-                    <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 border border-slate-200 shadow-2xl relative">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+                    <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 border border-slate-200 shadow-2xl relative my-auto">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="text-base font-black text-[#1E3A2B]">إضافة منتج جديد للمتجر</h3>
+                            <h3 className="text-sm sm:text-base font-black text-[#1E3A2B]">إضافة منتج جديد للمتجر</h3>
                             <button onClick={() => setShowAddModal(false)} className="p-1 rounded-full text-slate-400 hover:text-slate-600 transition cursor-pointer">
                                 <X size={20} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleAddProductSubmit} className="space-y-4 text-xs font-bold">
+                        <form onSubmit={handleAddProductSubmit} className="space-y-3.5 text-xs font-bold">
                             <div>
                                 <label className="block text-slate-700 mb-1">اسم المنتج بالعربية *</label>
                                 <input
@@ -749,9 +844,9 @@ export default function AdminDashboard() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-2.5">
                                 <div>
-                                    <label className="block text-slate-700 mb-1">الثمن بالدرهم (Prix DH) *</label>
+                                    <label className="block text-slate-700 mb-1">الثمن (Prix DH) *</label>
                                     <input
                                         type="number" required placeholder="75"
                                         value={newProduct.price}
@@ -771,14 +866,14 @@ export default function AdminDashboard() {
                             </div>
 
                             <div className="space-y-1.5">
-                                <label className="block text-slate-700">اختر صورة التغليف الرسمية</label>
-                                <div className="flex flex-wrap gap-1.5">
+                                <label className="block text-slate-700">اختر صورة التغليف الرسمية (Doypack)</label>
+                                <div className="flex flex-wrap gap-1">
                                     {PACKAGING_PRESETS.map((preset) => (
                                         <button
                                             key={preset.url}
                                             type="button"
                                             onClick={() => setNewProduct({ ...newProduct, image_url: preset.url })}
-                                            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border transition ${
+                                            className={`px-2 py-1 rounded-lg text-[10px] font-extrabold border transition ${
                                                 newProduct.image_url === preset.url
                                                     ? 'bg-[#1E3A2B] text-white border-[#1E3A2B]'
                                                     : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -789,14 +884,14 @@ export default function AdminDashboard() {
                                     ))}
                                 </div>
                                 <input
-                                    type="text" placeholder="/images/products/granola-amlou.png"
+                                    type="text" placeholder="/doypack_miel_amandes.png"
                                     value={newProduct.image_url}
                                     onChange={(e) => setNewProduct({ ...newProduct, image_url: e.target.value })}
-                                    className="w-full px-3.5 py-2 bg-[#FAF9F6] border border-slate-200 rounded-xl text-[11px] focus:outline-none focus:border-[#D97706]"
+                                    className="w-full px-3 py-2 bg-[#FAF9F6] border border-slate-200 rounded-xl text-[11px] focus:outline-none focus:border-[#D97706]"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-2.5">
                                 <div>
                                     <label className="block text-slate-700 mb-1">الشارة (Badge AR)</label>
                                     <input
@@ -817,7 +912,7 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
 
-                            <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                            <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-100">
                                 <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl transition">إلغاء</button>
                                 <button type="submit" className="px-5 py-2.5 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-xl font-black shadow-md">حفظ المنتج</button>
                             </div>
@@ -826,18 +921,18 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* MODAL 2: EDIT */}
+            {/* MODAL 2: EDIT PRODUCT */}
             {editingProduct && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
-                    <div className="bg-white rounded-3xl max-w-lg w-full p-6 space-y-5 border border-slate-200 shadow-2xl relative">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+                    <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 space-y-4 border border-slate-200 shadow-2xl relative my-auto">
                         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="text-base font-black text-[#1E3A2B]">تعديل بيانات المنتج</h3>
+                            <h3 className="text-sm sm:text-base font-black text-[#1E3A2B]">تعديل بيانات المنتج</h3>
                             <button onClick={() => setEditingProduct(null)} className="p-1 rounded-full text-slate-400 hover:text-slate-600 transition cursor-pointer">
                                 <X size={20} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleUpdateProductSubmit} className="space-y-4 text-xs font-bold">
+                        <form onSubmit={handleUpdateProductSubmit} className="space-y-3.5 text-xs font-bold">
                             <div>
                                 <label className="block text-slate-700 mb-1">اسم المنتج بالعربية *</label>
                                 <input
@@ -858,7 +953,7 @@ export default function AdminDashboard() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-2.5">
                                 <div>
                                     <label className="block text-slate-700 mb-1">الثمن (DH) *</label>
                                     <input
@@ -881,13 +976,13 @@ export default function AdminDashboard() {
 
                             <div className="space-y-1.5">
                                 <label className="block text-slate-700">تغيير صورة التغليف الرسمية</label>
-                                <div className="flex flex-wrap gap-1.5">
+                                <div className="flex flex-wrap gap-1">
                                     {PACKAGING_PRESETS.map((preset) => (
                                         <button
                                             key={preset.url}
                                             type="button"
                                             onClick={() => setEditingProduct({ ...editingProduct, image_url: preset.url })}
-                                            className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold border transition ${
+                                            className={`px-2 py-1 rounded-lg text-[10px] font-extrabold border transition ${
                                                 editingProduct.image_url === preset.url
                                                     ? 'bg-[#1E3A2B] text-white border-[#1E3A2B]'
                                                     : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -901,11 +996,11 @@ export default function AdminDashboard() {
                                     type="text"
                                     value={editingProduct.image_url || ''}
                                     onChange={(e) => setEditingProduct({ ...editingProduct, image_url: e.target.value })}
-                                    className="w-full px-3.5 py-2 bg-[#FAF9F6] border border-slate-200 rounded-xl text-[11px] focus:outline-none focus:border-[#D97706]"
+                                    className="w-full px-3 py-2 bg-[#FAF9F6] border border-slate-200 rounded-xl text-[11px] focus:outline-none focus:border-[#D97706]"
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 gap-2.5">
                                 <div>
                                     <label className="block text-slate-700 mb-1">الشارة (Badge AR)</label>
                                     <input
@@ -926,7 +1021,7 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
 
-                            <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
+                            <div className="pt-3 flex items-center justify-end gap-2.5 border-t border-slate-100">
                                 <button type="button" onClick={() => setEditingProduct(null)} className="px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl transition">إلغاء</button>
                                 <button type="submit" className="px-5 py-2.5 bg-[#D97706] hover:bg-amber-600 text-white rounded-xl font-black shadow-md">تحديث التغيرات</button>
                             </div>
