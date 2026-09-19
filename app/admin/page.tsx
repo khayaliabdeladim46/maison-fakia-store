@@ -6,12 +6,11 @@ import {
     Package, Clock, CheckCircle2, Truck, Check,
     Search, MessageCircle, Phone, MapPin,
     Plus, Trash2, Edit3, Layers, X, ShoppingBag, Wallet,
-    Volume2, Sparkles, FileText, Printer, Calendar, Download, Building2
+    Volume2, Sparkles, FileText, Printer, Calendar, Download, Building2, LogOut
 } from 'lucide-react';
 
 const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1517673400267-0251440c45dc?w=500&auto=format&fit=crop&q=80';
 
-// قائمة المنتجات الرسمية الموحدة
 const INITIAL_PRODUCTS = [
     {
         id: 'prod-1',
@@ -93,25 +92,32 @@ export default function AdminDashboard() {
     const [products, setProducts] = useState<any[]>(INITIAL_PRODUCTS);
     const [loadingOrders, setLoadingOrders] = useState(true);
 
-    // Notifications & Audio
     const [soundEnabled, setSoundEnabled] = useState(true);
     const [newOrderAlert, setNewOrderAlert] = useState<any | null>(null);
     const audioCtxRef = useRef<AudioContext | null>(null);
     const lastOrderIdsRef = useRef<Set<string>>(new Set());
 
-    // Search & Filters
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [selectedMonth, setSelectedMonth] = useState<string>('2026-09');
     const [selectedCity, setSelectedCity] = useState<string>('all');
 
-    // Modals
     const [devisSingleOrder, setDevisSingleOrder] = useState<any | null>(null);
     const [showMonthlyDevis, setShowMonthlyDevis] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
-    // Audio Chime
+    // Logout Function with clear redirect
+    const handleLogout = async () => {
+        try {
+            await supabase.auth.signOut();
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            window.location.href = '/login';
+        }
+    };
+
     const playNotificationChime = () => {
         try {
             const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -204,14 +210,12 @@ export default function AdminDashboard() {
         setProducts(products.filter((p) => p.id !== prodId));
     };
 
-    // Extract unique list of cities dynamically from orders
     const availableCities = Array.from(new Set(orders.map(o => o.city).filter(Boolean)));
 
     const confirmedRevenue = orders
         .filter((o) => o.status === 'Delivered' || o.status === 'Confirmed')
         .reduce((acc, curr) => acc + (parseFloat(curr.total_price || curr.price) || 0), 0);
 
-    // Multi-criteria filtering (Search + Status + Month + City)
     const filteredOrders = orders.filter((order) => {
         const clientName = getClientName(order).toLowerCase();
         const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
@@ -232,7 +236,6 @@ export default function AdminDashboard() {
 
     const monthlyTotalRevenue = filteredOrders.reduce((acc, curr) => acc + (parseFloat(curr.total_price || curr.price) || 0), 0);
 
-    // 📊 EXPORT TO EXCEL / CSV FUNCTION WITH UTF-8 BOM
     const exportToCSV = () => {
         if (filteredOrders.length === 0) {
             alert('لا توجد طلبيات لتصديرها!');
@@ -281,7 +284,6 @@ export default function AdminDashboard() {
     return (
         <div dir="rtl" className="min-h-screen bg-[#FAF9F6] text-[#1E3A2B] font-sans pb-24 relative">
 
-            {/* PRINT STYLING FOR A4 EXPORT */}
             <style>{`
                 @media print {
                     body { background: white !important; color: black !important; }
@@ -293,7 +295,6 @@ export default function AdminDashboard() {
                 }
             `}</style>
 
-            {/* 🔔 POPUP NOTIFICATION TOAST WITH AUDIO & ANIMATION */}
             {newOrderAlert && (
                 <div className="fixed top-16 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-50 animate-bounce duration-500 no-print">
                     <div className="bg-[#1E3A2B] border-2 border-[#D97706] text-white p-4 rounded-3xl shadow-2xl flex items-start justify-between gap-3 backdrop-blur-md">
@@ -326,7 +327,6 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* HEADER */}
             <header className="bg-[#1E3A2B] text-white py-3.5 px-4 sm:px-8 shadow-xl sticky top-0 z-40 backdrop-blur-md bg-opacity-95 border-b border-[#D97706]/30 no-print">
                 <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="flex items-center justify-between w-full sm:w-auto">
@@ -341,9 +341,15 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
-                        <button onClick={() => { setSoundEnabled(true); playNotificationChime(); }} className="sm:hidden p-2.5 bg-amber-500/20 text-amber-300 rounded-2xl border border-amber-500/40">
-                            <Volume2 size={18} />
-                        </button>
+                        <div className="flex items-center gap-2 sm:hidden">
+                            <button onClick={() => { setSoundEnabled(true); playNotificationChime(); }} className="p-2.5 bg-amber-500/20 text-amber-300 rounded-2xl border border-amber-500/40">
+                                <Volume2 size={18} />
+                            </button>
+
+                            <button onClick={handleLogout} className="p-2.5 bg-rose-500/20 text-rose-300 rounded-2xl border border-rose-500/40" title="تسجيل الخروج">
+                                <LogOut size={18} />
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
@@ -358,18 +364,24 @@ export default function AdminDashboard() {
                             </button>
                         </div>
 
-                        <button onClick={() => { setSoundEnabled(true); playNotificationChime(); }} className="hidden sm:flex px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-2xl border border-amber-500/40 items-center gap-2 text-xs font-bold cursor-pointer">
+                        <button onClick={() => { setSoundEnabled(true); playNotificationChime(); }} className="hidden sm:flex px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-2xl border border-amber-500/40 items-center gap-1.5 text-xs font-bold cursor-pointer">
                             <Volume2 size={16} />
                             <span>تفعيل الصوت</span>
+                        </button>
+
+                        <button
+                            onClick={handleLogout}
+                            className="hidden sm:flex px-3.5 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-2xl border border-rose-500/40 items-center gap-1.5 text-xs font-bold cursor-pointer transition"
+                        >
+                            <LogOut size={16} />
+                            <span>تسجيل الخروج</span>
                         </button>
                     </div>
                 </div>
             </header>
 
-            {/* MAIN DASHBOARD CONTENT */}
             <main className="max-w-7xl mx-auto px-4 sm:px-8 mt-6 space-y-6 no-print">
 
-                {/* METRICS CARDS */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
                     <div className="bg-white p-4 sm:p-6 rounded-3xl border border-emerald-200/80 shadow-xs space-y-1">
                         <span className="text-[11px] sm:text-xs font-bold text-emerald-800 block">المداخيل الإجمالية</span>
@@ -389,13 +401,11 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* TAB 1: ORDERS */}
                 {activeTab === 'orders' && (
                     <div className="space-y-4">
 
                         <div className="bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
 
-                            {/* SEARCH + MONTH FILTER + CITY FILTER */}
                             <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
                                 <div className="relative w-full sm:w-64">
                                     <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -409,7 +419,6 @@ export default function AdminDashboard() {
                                 </div>
 
                                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                                    {/* Month Selector */}
                                     <div className="flex items-center gap-1.5 bg-[#FAF9F6] border border-slate-200 px-3 py-2 rounded-2xl text-xs font-bold w-full sm:w-auto">
                                         <Calendar size={15} className="text-[#D97706] shrink-0" />
                                         <select
@@ -423,7 +432,6 @@ export default function AdminDashboard() {
                                         </select>
                                     </div>
 
-                                    {/* 🏙️ City Selector */}
                                     <div className="flex items-center gap-1.5 bg-[#FAF9F6] border border-slate-200 px-3 py-2 rounded-2xl text-xs font-bold w-full sm:w-auto">
                                         <Building2 size={15} className="text-[#D97706] shrink-0" />
                                         <select
@@ -440,7 +448,6 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
 
-                            {/* ACTION BUTTONS (DEVIS PDF + CSV EXPORT) */}
                             <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
                                 <button
                                     onClick={exportToCSV}
@@ -473,7 +480,6 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
-                        {/* ORDERS CONTAINER */}
                         {loadingOrders ? (
                             <div className="p-12 text-center text-xs font-bold text-slate-400 bg-white rounded-3xl">جاري تحميل الطلبيات...</div>
                         ) : filteredOrders.length === 0 ? (
@@ -482,173 +488,98 @@ export default function AdminDashboard() {
                                 <p className="text-xs font-bold text-slate-500">لا توجد طلبيات مطابقة للبحث، المدينة أو الشهر المحدد.</p>
                             </div>
                         ) : (
-                            <>
-                                {/* 📱 1. MOBILE CARD VIEW (KOLA CLIENT F CARTE) */}
-                                <div className="block sm:hidden space-y-3">
-                                    {filteredOrders.map((ord) => {
-                                        const clientName = getClientName(ord);
-                                        const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
-                                        const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
-                                        const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${clientName}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                {filteredOrders.map((ord) => {
+                                    const clientName = getClientName(ord);
+                                    const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
+                                    const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
+                                    const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${clientName}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
 
-                                        return (
-                                            <div key={ord.id} className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-xs space-y-3">
-                                                <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">
-                                                    <div>
-                                                        <h3 className="font-extrabold text-[#1E3A2B] text-sm">{clientName}</h3>
-                                                        <span className="text-xs font-bold text-[#D97706] flex items-center gap-1 mt-0.5" dir="ltr">
-                                                            <Phone size={12} /> {ord.phone}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-1.5">
-                                                        {getStatusBadge(ord.status || 'Pending')}
-                                                        <button
-                                                            onClick={() => setDevisSingleOrder(ord)}
-                                                            className="p-1.5 bg-amber-50 text-[#D97706] rounded-xl text-xs font-black border border-amber-200 flex items-center gap-1 cursor-pointer"
-                                                            title="Devis الزبون"
-                                                        >
-                                                            <FileText size={13} />
-                                                        </button>
+                                    return (
+                                        <div key={ord.id} className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-[#D97706]/40 transition space-y-4 flex flex-col justify-between">
+
+                                            <div className="flex items-start justify-between border-b border-slate-100 pb-3">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-xl bg-[#FAF9F6] border border-slate-200 text-[#1E3A2B] font-black text-xs flex items-center justify-center shrink-0">
+                                                            {clientName.charAt(0).toUpperCase()}
+                                                        </div>
+                                                        <div>
+                                                            <h3 className="font-black text-[#1E3A2B] text-base leading-snug">{clientName}</h3>
+                                                            <span className="text-xs font-bold text-[#D97706] flex items-center gap-1" dir="ltr">
+                                                                <Phone size={12} /> {ord.phone || 'بدون رقم'}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
 
-                                                <div className="space-y-1.5 text-xs">
-                                                    <div className="flex items-center justify-between text-slate-700">
-                                                        <span className="font-extrabold text-[#1E3A2B]">{ord.product_name || 'منتج غير محدد'}</span>
-                                                        <span className="font-black text-[#D97706] text-sm">{ord.total_price || ord.price || 0} DH</span>
-                                                    </div>
-
-                                                    <div className="flex items-center justify-between text-[11px] text-slate-500">
-                                                        <span className="flex items-center gap-1 font-semibold">
-                                                            <MapPin size={12} className="text-[#D97706]" /> {ord.city || 'المدينة غير محددة'}
-                                                        </span>
-                                                        <span className="font-bold">الكمية: {ord.quantity || 1}</span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="pt-2 border-t border-slate-100 flex items-center gap-2">
-                                                    <a
-                                                        href={waLink}
-                                                        target="_blank"
-                                                        rel="noreferrer"
-                                                        className="flex-1 py-2 bg-[#25D366] text-white rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold"
+                                                <div className="flex items-center gap-2">
+                                                    {getStatusBadge(ord.status || 'Pending')}
+                                                    <button
+                                                        onClick={() => setDevisSingleOrder(ord)}
+                                                        className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-[#D97706] rounded-xl text-xs font-black border border-amber-200 flex items-center gap-1 cursor-pointer transition"
+                                                        title="عرض Devis الزبون"
                                                     >
-                                                        <MessageCircle size={15} />
-                                                        <span>واتساب</span>
-                                                    </a>
-
-                                                    <select
-                                                        value={ord.status || 'Pending'}
-                                                        onChange={(e) => updateOrderStatus(ord.id, e.target.value)}
-                                                        className="py-2 px-3 bg-[#FAF9F6] border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer"
-                                                    >
-                                                        <option value="Pending">انتظار</option>
-                                                        <option value="Confirmed">تأكيد</option>
-                                                        <option value="Shipped">في الطريق</option>
-                                                        <option value="Delivered">تم التسليم</option>
-                                                    </select>
+                                                        <FileText size={13} />
+                                                        <span>Devis</span>
+                                                    </button>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
 
-                                {/* 💻 2. DESKTOP TABLE VIEW */}
-                                <div className="hidden sm:block bg-white rounded-3xl border border-slate-200 overflow-hidden">
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-right text-xs">
-                                            <thead className="bg-[#FAF9F6] text-slate-600 font-black border-b border-slate-200">
-                                            <tr>
-                                                <th className="p-4">الزبون والهاتف</th>
-                                                <th className="p-4">المنتج والكمية</th>
-                                                <th className="p-4">المبلغ الإجمالي</th>
-                                                <th className="p-4">المدينة والعنوان</th>
-                                                <th className="p-4">الحالة</th>
-                                                <th className="p-4 text-center">التواصل والـ Devis</th>
-                                            </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-100 font-medium">
-                                            {filteredOrders.map((ord) => {
-                                                const clientName = getClientName(ord);
-                                                const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
-                                                const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
-                                                const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${clientName}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
+                                            <div className="grid grid-cols-2 gap-3 text-xs bg-[#FAF9F6] p-3.5 rounded-2xl border border-slate-100">
+                                                <div className="space-y-1">
+                                                    <span className="text-[10px] text-slate-400 font-bold block">المنتج والكمية</span>
+                                                    <p className="font-extrabold text-[#1E3A2B] line-clamp-1">{ord.product_name || 'غرانولا صحية'}</p>
+                                                    <span className="text-[11px] font-bold text-slate-500 block">العدد: {ord.quantity || 1} قطعة</span>
+                                                </div>
 
-                                                return (
-                                                    <tr key={ord.id} className="hover:bg-amber-50/20 transition">
-                                                        <td className="p-4 space-y-1">
-                                                            <span className="font-extrabold text-[#1E3A2B] block text-sm">{clientName}</span>
-                                                            <span className="text-[11px] text-slate-500 flex items-center gap-1 font-bold" dir="ltr">
-                                                                    <Phone size={12} className="text-[#D97706]" /> {ord.phone}
-                                                                </span>
-                                                        </td>
+                                                <div className="space-y-1">
+                                                    <span className="text-[10px] text-slate-400 font-bold block">المبلغ الإجمالي</span>
+                                                    <p className="font-black text-[#D97706] text-base">{ord.total_price || ord.price || 0} DH</p>
+                                                    <span className="text-[10px] text-emerald-700 font-bold block">الدفع عند الاستلام</span>
+                                                </div>
 
-                                                        <td className="p-4 space-y-1">
-                                                            <span className="font-extrabold text-[#1E3A2B] block">{ord.product_name || 'منتج غير محدد'}</span>
-                                                            <span className="text-[10px] text-slate-400 font-bold block">الكمية: {ord.quantity || 1}</span>
-                                                        </td>
+                                                <div className="col-span-2 pt-2 border-t border-slate-200/60 flex items-start gap-1.5 text-slate-600">
+                                                    <MapPin size={14} className="text-[#D97706] shrink-0 mt-0.5" />
+                                                    <div>
+                                                        <span className="font-black text-[#1E3A2B]">{ord.city || 'المدينة غير محددة'}</span>
+                                                        {ord.address && <p className="text-[11px] text-slate-500 font-medium line-clamp-1">{ord.address}</p>}
+                                                    </div>
+                                                </div>
+                                            </div>
 
-                                                        <td className="p-4">
-                                                            <span className="font-black text-[#D97706] text-sm">{ord.total_price || ord.price || 0} DH</span>
-                                                        </td>
+                                            <div className="pt-1 flex items-center gap-2">
+                                                <a
+                                                    href={waLink}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="flex-1 py-2.5 bg-[#25D366] hover:bg-emerald-600 text-white rounded-2xl flex items-center justify-center gap-2 text-xs font-extrabold shadow-xs transition"
+                                                >
+                                                    <MessageCircle size={16} />
+                                                    <span>تواصل عبر الواتساب</span>
+                                                </a>
 
-                                                        <td className="p-4 space-y-1">
-                                                                <span className="font-bold text-slate-700 block flex items-center gap-1">
-                                                                    <MapPin size={12} className="text-[#D97706]" /> {ord.city || 'غير محددة'}
-                                                                </span>
-                                                            <span className="text-[10px] text-slate-400 block max-w-xs truncate">{ord.address}</span>
-                                                        </td>
+                                                <select
+                                                    value={ord.status || 'Pending'}
+                                                    onChange={(e) => updateOrderStatus(ord.id, e.target.value)}
+                                                    className="py-2.5 px-3 bg-[#FAF9F6] border border-slate-200 rounded-2xl text-xs font-extrabold text-slate-700 cursor-pointer focus:outline-none focus:border-[#D97706]"
+                                                >
+                                                    <option value="Pending">قيد الانتظار</option>
+                                                    <option value="Confirmed">تأكيد الكوموند</option>
+                                                    <option value="Shipped">خرجت للتوصيل</option>
+                                                    <option value="Delivered">تم التسليم</option>
+                                                </select>
+                                            </div>
 
-                                                        <td className="p-4">
-                                                            {getStatusBadge(ord.status || 'Pending')}
-                                                        </td>
-
-                                                        <td className="p-4">
-                                                            <div className="flex items-center justify-center gap-2">
-                                                                <a
-                                                                    href={waLink}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    className="p-2 bg-[#25D366] text-white rounded-xl transition shadow-xs flex items-center gap-1 text-[11px] font-bold"
-                                                                >
-                                                                    <MessageCircle size={14} />
-                                                                    <span>واتساب</span>
-                                                                </a>
-
-                                                                <button
-                                                                    onClick={() => setDevisSingleOrder(ord)}
-                                                                    className="px-2.5 py-1.5 bg-amber-50 text-[#D97706] rounded-xl text-[11px] font-black border border-amber-200 flex items-center gap-1 cursor-pointer"
-                                                                >
-                                                                    <FileText size={13} />
-                                                                    <span>Devis</span>
-                                                                </button>
-
-                                                                <select
-                                                                    value={ord.status || 'Pending'}
-                                                                    onChange={(e) => updateOrderStatus(ord.id, e.target.value)}
-                                                                    className="px-2.5 py-1.5 bg-[#FAF9F6] border border-slate-200 rounded-xl text-[11px] font-bold text-slate-700 cursor-pointer"
-                                                                >
-                                                                    <option value="Pending">قيد الانتظار</option>
-                                                                    <option value="Confirmed">تأكيد الكوموند</option>
-                                                                    <option value="Shipped">خرجت للتوصيل</option>
-                                                                    <option value="Delivered">تم التسليم</option>
-                                                                </select>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         )}
 
                     </div>
                 )}
 
-                {/* TAB 2: PRODUCTS (2x2 ON MOBILE) */}
                 {activeTab === 'products' && (
                     <div className="space-y-4">
                         <div className="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200 shadow-xs">
@@ -719,7 +650,6 @@ export default function AdminDashboard() {
 
             </main>
 
-            {/* MODAL 1: SINGLE CLIENT DEVIS PRINTABLE */}
             {devisSingleOrder && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
                     <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 border border-slate-200 shadow-2xl relative my-auto">
@@ -791,7 +721,6 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* MODAL 2: MONTHLY DEVIS PRINTABLE */}
             {showMonthlyDevis && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
                     <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 space-y-6 border border-slate-200 shadow-2xl relative my-auto">
@@ -855,7 +784,7 @@ export default function AdminDashboard() {
 
                         <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 no-print">
                             <button onClick={() => setShowMonthlyDevis(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold">إغلاق</button>
-                            <button onClick={() => window.print()} className="px-5 py-2 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 cursor-pointer">
+                            <button onClick={() => window.print()} className="px-5 py-2 bg-[#1E3A2B] hover:bg-[#D97706] text-white text-xs font-black shadow-md flex items-center gap-1.5 cursor-pointer">
                                 <Printer size={15} />
                                 <span>حفظ Devis الشهر كـ PDF</span>
                             </button>
