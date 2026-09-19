@@ -6,7 +6,7 @@ import {
     Package, Clock, CheckCircle2, Truck, Check,
     Search, MessageCircle, Phone, MapPin,
     Plus, Trash2, Edit3, Layers, X, ShoppingBag, Wallet,
-    Volume2, VolumeX, Sparkles
+    Volume2, Sparkles
 } from 'lucide-react';
 
 // صور الـ Doypack الرسمية المعتمدة
@@ -164,6 +164,12 @@ export default function AdminDashboard() {
         } catch (e) {
             console.log('Audio alert error:', e);
         }
+    };
+
+    // استخراج اسم الزبون الصحيح كيفما كان الحقل فـ الداتابيز
+    const getClientName = (ord: any) => {
+        if (!ord) return 'زبون جديد';
+        return ord.full_name || ord.fullName || ord.name || ord.client_name || ord.customer_name || 'زبون بدون اسم';
     };
 
     const handleNewOrderIncoming = (freshOrder: any) => {
@@ -342,9 +348,10 @@ export default function AdminDashboard() {
         .reduce((acc, curr) => acc + (parseFloat(curr.total_price || curr.price) || 0), 0);
 
     const filteredOrders = orders.filter((order) => {
+        const clientName = getClientName(order).toLowerCase();
         const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
         const matchesSearch =
-            (order.full_name && order.full_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            clientName.includes(searchTerm.toLowerCase()) ||
             (order.phone && order.phone.includes(searchTerm)) ||
             (order.city && order.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (order.product_name && order.product_name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -379,7 +386,7 @@ export default function AdminDashboard() {
                             <div className="space-y-1 text-right">
                                 <span className="font-black text-xs text-[#D97706] block">طلبية جديدة وصلت</span>
                                 <p className="text-xs font-bold text-emerald-100">
-                                    الزبون: <span className="text-white font-black">{newOrderAlert.full_name || 'زبون جديد'}</span> ({newOrderAlert.city || 'المغرب'})
+                                    الزبون: <span className="text-white font-black">{getClientName(newOrderAlert)}</span> ({newOrderAlert.city || 'المغرب'})
                                 </p>
                                 <p className="text-xs font-black text-amber-200" dir="ltr">
                                     <Phone size={12} className="inline ml-1" />
@@ -583,16 +590,17 @@ export default function AdminDashboard() {
                                 {/* 📱 MOBILE CARD VIEW */}
                                 <div className="block sm:hidden space-y-3">
                                     {filteredOrders.map((ord) => {
+                                        const clientName = getClientName(ord);
                                         const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
                                         const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
-                                        const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${ord.full_name || ''}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
+                                        const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${clientName}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
 
                                         return (
                                             <div key={ord.id} className="bg-white rounded-3xl p-4 border border-slate-200/90 shadow-xs space-y-3">
 
                                                 <div className="flex items-start justify-between border-b border-slate-100 pb-2.5">
                                                     <div>
-                                                        <h3 className="font-extrabold text-[#1E3A2B] text-sm">{ord.full_name || 'زبون بدون اسم'}</h3>
+                                                        <h3 className="font-extrabold text-[#1E3A2B] text-sm">{clientName}</h3>
                                                         <span className="text-xs font-bold text-[#D97706] flex items-center gap-1 mt-0.5" dir="ltr">
                                                             <Phone size={12} /> {ord.phone}
                                                         </span>
@@ -662,14 +670,15 @@ export default function AdminDashboard() {
                                             </thead>
                                             <tbody className="divide-y divide-slate-100 font-medium">
                                             {filteredOrders.map((ord) => {
+                                                const clientName = getClientName(ord);
                                                 const cleanPhone = ord.phone ? ord.phone.replace(/[^0-9]/g, '') : '';
                                                 const formattedPhone = cleanPhone.startsWith('0') ? `212${cleanPhone.slice(1)}` : cleanPhone;
-                                                const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${ord.full_name || ''}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
+                                                const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${clientName}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
 
                                                 return (
                                                     <tr key={ord.id} className="hover:bg-amber-50/20 transition">
                                                         <td className="p-4 space-y-1">
-                                                            <span className="font-extrabold text-[#1E3A2B] block text-sm">{ord.full_name || 'بدون اسم'}</span>
+                                                            <span className="font-extrabold text-[#1E3A2B] block text-sm">{clientName}</span>
                                                             <span className="text-[11px] text-slate-500 flex items-center gap-1 font-bold" dir="ltr">
                                                                     <Phone size={12} className="text-[#D97706]" /> {ord.phone}
                                                                 </span>
@@ -732,7 +741,7 @@ export default function AdminDashboard() {
                     </div>
                 )}
 
-                {/* TAB 2: PRODUCTS (WITH NEW DOYPACK PACKAGING IMAGES) */}
+                {/* TAB 2: PRODUCTS (2x2 GRID ON MOBILE) */}
                 {activeTab === 'products' && (
                     <div className="space-y-4">
 
@@ -751,54 +760,55 @@ export default function AdminDashboard() {
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* 📱 2x2 GRID ON MOBILE, 3 ON DESKTOP */}
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-4">
                             {products.map((prod) => (
-                                <div key={prod.id} className="bg-white rounded-3xl border border-slate-200 p-4 space-y-3 shadow-xs relative flex flex-col justify-between group">
+                                <div key={prod.id} className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-2.5 sm:p-4 space-y-2 sm:space-y-3 shadow-xs relative flex flex-col justify-between group">
 
-                                    {/* Doypack Packaging Preview Image */}
-                                    <div className="w-full h-52 bg-[#FAF9F6] rounded-2xl overflow-hidden border border-slate-100 relative flex items-center justify-center p-2">
+                                    {/* Product Packaging Image */}
+                                    <div className="w-full h-32 sm:h-52 bg-[#FAF9F6] rounded-xl overflow-hidden border border-slate-100 relative flex items-center justify-center p-1.5 sm:p-2">
                                         {(prod.badge_ar || prod.badge_fr) && (
-                                            <span className="absolute top-3 right-3 bg-[#D97706] text-white px-2.5 py-1 rounded-full text-[10px] font-black z-10 shadow-xs">
+                                            <span className="absolute top-1.5 right-1.5 sm:top-3 sm:right-3 bg-[#D97706] text-white px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-black z-10 shadow-xs truncate max-w-[80%]">
                                                 {prod.badge_ar || prod.badge_fr}
                                             </span>
                                         )}
-                                        <span className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-full text-[10px] font-black text-[#1E3A2B] border border-slate-200 z-10">
+                                        <span className="absolute bottom-1.5 left-1.5 sm:bottom-3 sm:left-3 bg-white/90 backdrop-blur-xs px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] font-black text-[#1E3A2B] border border-slate-200 z-10">
                                             {prod.weight || '500g'}
                                         </span>
 
                                         <img
                                             src={prod.image_url || prod.image || '/doypack_miel_amandes.png'}
                                             alt={prod.name_ar}
-                                            className="w-full h-full object-contain hover:scale-105 transition duration-500"
+                                            className="w-full h-full object-contain group-hover:scale-105 transition duration-500"
                                             onError={(e: any) => { e.target.src = FALLBACK_IMAGE; }}
                                         />
                                     </div>
 
                                     <div className="space-y-0.5">
-                                        <h3 className="text-sm font-black text-[#1E3A2B]">{prod.name_ar}</h3>
-                                        <p className="text-[11px] text-slate-400 font-semibold">{prod.name_fr}</p>
+                                        <h3 className="text-xs sm:text-sm font-black text-[#1E3A2B] line-clamp-1">{prod.name_ar}</h3>
+                                        <p className="text-[10px] sm:text-[11px] text-slate-400 font-semibold truncate">{prod.name_fr}</p>
                                     </div>
 
-                                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                                    <div className="flex items-center justify-between pt-1.5 border-t border-slate-100">
                                         <div>
-                                            <span className="text-[10px] text-slate-400 block font-bold">الثمن</span>
-                                            <span className="text-lg font-black text-[#D97706]">{prod.price} <span className="text-xs">DH</span></span>
+                                            <span className="text-[9px] sm:text-[10px] text-slate-400 block font-bold">الثمن</span>
+                                            <span className="text-sm sm:text-lg font-black text-[#D97706]">{prod.price} <span className="text-[10px] sm:text-xs">DH</span></span>
                                         </div>
 
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center gap-1">
                                             <button
                                                 onClick={() => setEditingProduct(prod)}
-                                                className="px-3 py-2 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                                                className="px-2 py-1.5 sm:px-3 sm:py-2 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition flex items-center gap-1 cursor-pointer"
                                             >
-                                                <Edit3 size={13} />
-                                                <span>تعديل</span>
+                                                <Edit3 size={12} />
+                                                <span className="hidden sm:inline">تعديل</span>
                                             </button>
 
                                             <button
                                                 onClick={() => handleDeleteProduct(prod.id)}
-                                                className="p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl text-xs font-bold transition flex items-center cursor-pointer border border-rose-200"
+                                                className="p-1.5 sm:p-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg sm:rounded-xl text-xs font-bold transition flex items-center cursor-pointer border border-rose-200"
                                             >
-                                                <Trash2 size={13} />
+                                                <Trash2 size={12} />
                                             </button>
                                         </div>
                                     </div>
