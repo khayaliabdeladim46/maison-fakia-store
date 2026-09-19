@@ -107,7 +107,6 @@ export default function AdminDashboard() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
-    // Logout Function with clear redirect
     const handleLogout = async () => {
         try {
             await supabase.auth.signOut();
@@ -271,18 +270,18 @@ export default function AdminDashboard() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'Confirmed':
-                return <span className="px-2.5 py-1 bg-blue-100 text-blue-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-blue-200"><CheckCircle2 size={12}/> مؤكدة</span>;
+                return <span className="h-7 px-2.5 bg-blue-100 text-blue-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-blue-200"><CheckCircle2 size={12}/> مؤكدة</span>;
             case 'Shipped':
-                return <span className="px-2.5 py-1 bg-purple-100 text-purple-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-purple-200"><Truck size={12}/> في الطريق</span>;
+                return <span className="h-7 px-2.5 bg-purple-100 text-purple-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-purple-200"><Truck size={12}/> في الطريق</span>;
             case 'Delivered':
-                return <span className="px-2.5 py-1 bg-emerald-100 text-emerald-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-emerald-200"><Check size={12}/> تم التسليم</span>;
+                return <span className="h-7 px-2.5 bg-emerald-100 text-emerald-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-emerald-200"><Check size={12}/> تم التسليم</span>;
             default:
-                return <span className="px-2.5 py-1 bg-amber-100 text-amber-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-amber-200"><Clock size={12}/> قيد الانتظار</span>;
+                return <span className="h-7 px-2.5 bg-amber-100 text-amber-900 rounded-full text-[11px] font-black flex items-center gap-1 w-fit border border-amber-200"><Clock size={12}/> قيد الانتظار</span>;
         }
     };
 
     return (
-        <div dir="rtl" className="min-h-screen bg-[#FAF9F6] text-[#1E3A2B] font-sans pb-24 relative">
+        <div dir="rtl" className="min-h-screen bg-[#FAF9F6] text-[#1E3A2B] font-sans pb-24 relative selection:bg-[#D97706] selection:text-white">
 
             <style>{`
                 @media print {
@@ -295,15 +294,16 @@ export default function AdminDashboard() {
                 }
             `}</style>
 
+            {/* NOTIFICATION TOAST */}
             {newOrderAlert && (
                 <div className="fixed top-16 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-50 animate-bounce duration-500 no-print">
-                    <div className="bg-[#1E3A2B] border-2 border-[#D97706] text-white p-4 rounded-3xl shadow-2xl flex items-start justify-between gap-3 backdrop-blur-md">
+                    <div className="bg-[#1E3A2B] border-2 border-[#D97706] text-white p-4 rounded-2xl shadow-2xl flex items-start justify-between gap-3 backdrop-blur-md">
                         <div className="flex items-start gap-3">
-                            <div className="w-10 h-10 bg-[#D97706] rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md">
+                            <div className="w-10 h-10 bg-[#D97706] rounded-xl flex items-center justify-center text-white shrink-0 shadow-md">
                                 <Sparkles size={20} className="animate-spin" />
                             </div>
                             <div className="space-y-1 text-right">
-                                <span className="font-black text-xs text-[#D97706] block">طلبية جديدة وصلت!</span>
+                                <span className="font-black text-xs text-[#D97706] block">طلبية جديدة وصلت</span>
                                 <p className="text-xs font-bold text-emerald-100">
                                     الزبون: <span className="text-white font-black">{getClientName(newOrderAlert)}</span> ({newOrderAlert.city || 'المغرب'})
                                 </p>
@@ -319,7 +319,7 @@ export default function AdminDashboard() {
 
                         <button
                             onClick={() => setNewOrderAlert(null)}
-                            className="p-1 rounded-full text-emerald-300 hover:text-white transition cursor-pointer"
+                            className="p-1 rounded-lg text-emerald-300 hover:text-white transition cursor-pointer"
                         >
                             <X size={18} />
                         </button>
@@ -327,11 +327,12 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            <header className="bg-[#1E3A2B] text-white py-3.5 px-4 sm:px-8 shadow-xl sticky top-0 z-40 backdrop-blur-md bg-opacity-95 border-b border-[#D97706]/30 no-print">
-                <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* HEADER */}
+            <header className="bg-[#1E3A2B] text-white py-3 px-4 sm:px-8 shadow-xl sticky top-0 z-40 backdrop-blur-md bg-opacity-95 border-b border-[#D97706]/30 no-print">
+                <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div className="flex items-center justify-between w-full sm:w-auto">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-[#D97706] text-white rounded-2xl flex items-center justify-center font-black text-base shadow-lg">MF</div>
+                            <div className="w-10 h-10 bg-[#D97706] text-white rounded-xl flex items-center justify-center font-black text-base shadow-lg">MF</div>
                             <div>
                                 <h1 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
                                     <span>Maison Fakia Admin</span>
@@ -342,89 +343,93 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="flex items-center gap-2 sm:hidden">
-                            <button onClick={() => { setSoundEnabled(true); playNotificationChime(); }} className="p-2.5 bg-amber-500/20 text-amber-300 rounded-2xl border border-amber-500/40">
-                                <Volume2 size={18} />
+                            <button onClick={() => { setSoundEnabled(true); playNotificationChime(); }} className="h-9 w-9 bg-amber-500/20 text-amber-300 rounded-xl border border-amber-500/40 flex items-center justify-center">
+                                <Volume2 size={16} />
                             </button>
 
-                            <button onClick={handleLogout} className="p-2.5 bg-rose-500/20 text-rose-300 rounded-2xl border border-rose-500/40" title="تسجيل الخروج">
-                                <LogOut size={18} />
+                            <button onClick={handleLogout} className="h-9 w-9 bg-rose-500/20 text-rose-300 rounded-xl border border-rose-500/40 flex items-center justify-center" title="تسجيل الخروج">
+                                <LogOut size={16} />
                             </button>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                        <div className="grid grid-cols-2 w-full sm:w-auto bg-emerald-950/90 p-1 rounded-2xl border border-emerald-800">
-                            <button onClick={() => setActiveTab('orders')} className={`py-2 px-5 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'orders' ? 'bg-[#D97706] text-white shadow-md' : 'text-emerald-200 hover:text-white'}`}>
+                    <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+                        <div className="grid grid-cols-2 w-full sm:w-auto bg-emerald-950/90 p-1 rounded-xl border border-emerald-800">
+                            <button onClick={() => setActiveTab('orders')} className={`h-9 px-4 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'orders' ? 'bg-[#D97706] text-white shadow-md' : 'text-emerald-200 hover:text-white'}`}>
                                 <Layers size={15} />
                                 <span>الطلبيات ({orders.length})</span>
                             </button>
-                            <button onClick={() => setActiveTab('products')} className={`py-2 px-5 rounded-xl text-xs font-extrabold transition flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'products' ? 'bg-[#D97706] text-white shadow-md' : 'text-emerald-200 hover:text-white'}`}>
+                            <button onClick={() => setActiveTab('products')} className={`h-9 px-4 rounded-lg text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${activeTab === 'products' ? 'bg-[#D97706] text-white shadow-md' : 'text-emerald-200 hover:text-white'}`}>
                                 <ShoppingBag size={15} />
                                 <span>المنتجات ({products.length})</span>
                             </button>
                         </div>
 
-                        <button onClick={() => { setSoundEnabled(true); playNotificationChime(); }} className="hidden sm:flex px-3.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-2xl border border-amber-500/40 items-center gap-1.5 text-xs font-bold cursor-pointer">
-                            <Volume2 size={16} />
-                            <span>تفعيل الصوت</span>
+                        <button onClick={() => { setSoundEnabled(true); playNotificationChime(); }} className="hidden sm:flex h-9 px-3.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-xl border border-amber-500/40 items-center gap-1.5 text-xs font-bold cursor-pointer transition shrink-0">
+                            <Volume2 size={15} />
+                            <span>التنبيهات</span>
                         </button>
 
                         <button
                             onClick={handleLogout}
-                            className="hidden sm:flex px-3.5 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-2xl border border-rose-500/40 items-center gap-1.5 text-xs font-bold cursor-pointer transition"
+                            className="hidden sm:flex h-9 px-3.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-xl border border-rose-500/40 items-center gap-1.5 text-xs font-bold cursor-pointer transition shrink-0"
                         >
-                            <LogOut size={16} />
+                            <LogOut size={15} />
                             <span>تسجيل الخروج</span>
                         </button>
                     </div>
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-8 mt-6 space-y-6 no-print">
+            {/* MAIN CONTENT */}
+            <main className="max-w-7xl mx-auto px-4 sm:px-8 mt-6 space-y-5 no-print">
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
-                    <div className="bg-white p-4 sm:p-6 rounded-3xl border border-emerald-200/80 shadow-xs space-y-1">
+                {/* METRICS */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5">
+                    <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
                         <span className="text-[11px] sm:text-xs font-bold text-emerald-800 block">المداخيل الإجمالية</span>
-                        <span className="text-xl sm:text-3xl font-black text-[#1E3A2B] block">{confirmedRevenue.toLocaleString()} <span className="text-xs text-[#D97706]">DH</span></span>
+                        <span className="text-xl sm:text-2xl font-black text-[#1E3A2B] block">{confirmedRevenue.toLocaleString()} <span className="text-xs text-[#D97706]">DH</span></span>
                     </div>
-                    <div className="bg-white p-4 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-1">
+                    <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
                         <span className="text-[11px] sm:text-xs font-bold text-slate-500 block">إجمالي الطلبات</span>
-                        <span className="text-xl sm:text-3xl font-black text-[#1E3A2B] block">{orders.length}</span>
+                        <span className="text-xl sm:text-2xl font-black text-[#1E3A2B] block">{orders.length}</span>
                     </div>
-                    <div className="bg-white p-4 sm:p-6 rounded-3xl border border-amber-200/80 shadow-xs space-y-1">
+                    <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
                         <span className="text-[11px] sm:text-xs font-bold text-amber-700 block">قيد الانتظار</span>
-                        <span className="text-xl sm:text-3xl font-black text-amber-600 block">{orders.filter(o => !o.status || o.status === 'Pending').length}</span>
+                        <span className="text-xl sm:text-2xl font-black text-amber-600 block">{orders.filter(o => !o.status || o.status === 'Pending').length}</span>
                     </div>
-                    <div className="bg-white p-4 sm:p-6 rounded-3xl border border-emerald-200/80 shadow-xs space-y-1">
+                    <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-1">
                         <span className="text-[11px] sm:text-xs font-bold text-emerald-700 block">تم التسليم</span>
-                        <span className="text-xl sm:text-3xl font-black text-emerald-600 block">{orders.filter(o => o.status === 'Delivered').length}</span>
+                        <span className="text-xl sm:text-2xl font-black text-emerald-600 block">{orders.filter(o => o.status === 'Delivered').length}</span>
                     </div>
                 </div>
 
+                {/* ORDERS TAB */}
                 {activeTab === 'orders' && (
                     <div className="space-y-4">
 
-                        <div className="bg-white p-4 rounded-3xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+                        {/* UNIFORM CONTROL BAR */}
+                        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
 
-                            <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
+                            <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full lg:w-auto">
                                 <div className="relative w-full sm:w-64">
-                                    <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                                     <input
                                         type="text"
                                         placeholder="بحث بالاسم، الرقم، المدينة..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full pr-10 pl-4 py-2.5 bg-[#FAF9F6] border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:border-[#D97706]"
+                                        className="w-full h-10 pr-10 pl-4 bg-[#FAF9F6] border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-[#D97706] transition"
                                     />
                                 </div>
 
-                                <div className="flex items-center gap-2 w-full sm:w-auto">
-                                    <div className="flex items-center gap-1.5 bg-[#FAF9F6] border border-slate-200 px-3 py-2 rounded-2xl text-xs font-bold w-full sm:w-auto">
-                                        <Calendar size={15} className="text-[#D97706] shrink-0" />
+                                <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+                                    <div className="flex items-center gap-1.5 bg-[#FAF9F6] border border-slate-200 px-3 h-10 rounded-xl text-xs font-bold">
+                                        <Calendar size={14} className="text-[#D97706] shrink-0" />
                                         <select
                                             value={selectedMonth}
                                             onChange={(e) => setSelectedMonth(e.target.value)}
-                                            className="bg-transparent focus:outline-none text-slate-700 text-xs cursor-pointer w-full"
+                                            className="bg-transparent focus:outline-none text-slate-700 text-xs cursor-pointer w-full font-bold"
                                         >
                                             <option value="all">جميع الأشهر</option>
                                             <option value="2026-09">شتنبر 2026</option>
@@ -432,14 +437,14 @@ export default function AdminDashboard() {
                                         </select>
                                     </div>
 
-                                    <div className="flex items-center gap-1.5 bg-[#FAF9F6] border border-slate-200 px-3 py-2 rounded-2xl text-xs font-bold w-full sm:w-auto">
-                                        <Building2 size={15} className="text-[#D97706] shrink-0" />
+                                    <div className="flex items-center gap-1.5 bg-[#FAF9F6] border border-slate-200 px-3 h-10 rounded-xl text-xs font-bold">
+                                        <Building2 size={14} className="text-[#D97706] shrink-0" />
                                         <select
                                             value={selectedCity}
                                             onChange={(e) => setSelectedCity(e.target.value)}
-                                            className="bg-transparent focus:outline-none text-slate-700 text-xs cursor-pointer w-full"
+                                            className="bg-transparent focus:outline-none text-slate-700 text-xs cursor-pointer w-full font-bold"
                                         >
-                                            <option value="all">جميع المدن ({availableCities.length})</option>
+                                            <option value="all">المدن ({availableCities.length})</option>
                                             {availableCities.map(city => (
                                                 <option key={city} value={city}>{city}</option>
                                             ))}
@@ -448,44 +453,44 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end">
+                            <div className="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 justify-between lg:justify-end">
                                 <button
                                     onClick={exportToCSV}
-                                    className="px-3.5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-2xl text-xs font-black transition shadow-xs flex items-center gap-1.5 cursor-pointer"
-                                    title="تصدير لـ Excel"
+                                    className="h-10 px-3.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                                 >
-                                    <Download size={15} />
-                                    <span>تصدير CSV</span>
+                                    <Download size={14} />
+                                    <span>CSV</span>
                                 </button>
 
                                 <button
                                     onClick={() => setShowMonthlyDevis(true)}
-                                    className="px-3.5 py-2.5 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-2xl text-xs font-black transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                                    className="h-10 px-3.5 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                                 >
-                                    <FileText size={15} />
-                                    <span>Devis الشهر (PDF)</span>
+                                    <FileText size={14} />
+                                    <span>Devis الشهر</span>
                                 </button>
 
-                                <div className="flex items-center gap-1 overflow-x-auto text-xs font-bold">
+                                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
                                     {['all', 'Pending', 'Confirmed', 'Shipped', 'Delivered'].map((st) => (
                                         <button
                                             key={st}
                                             onClick={() => setFilterStatus(st)}
-                                            className={`px-2.5 py-2 rounded-xl transition whitespace-nowrap text-[11px] cursor-pointer ${filterStatus === st ? 'bg-[#D97706] text-white' : 'bg-slate-100 text-slate-600'}`}
+                                            className={`h-8 px-2.5 rounded-lg transition text-[11px] font-extrabold cursor-pointer whitespace-nowrap ${filterStatus === st ? 'bg-[#D97706] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
                                         >
-                                            {st === 'all' ? 'الكل' : st === 'Pending' ? 'الانتظار' : st === 'Confirmed' ? 'مؤكدة' : st === 'Shipped' ? 'فـ الطريق' : 'مسلّمة'}
+                                            {st === 'all' ? 'الكل' : st === 'Pending' ? 'انتظار' : st === 'Confirmed' ? 'مؤكدة' : st === 'Shipped' ? 'فـ الطريق' : 'مسلّمة'}
                                         </button>
                                     ))}
                                 </div>
                             </div>
                         </div>
 
+                        {/* CLIENT SECTION CARDS */}
                         {loadingOrders ? (
-                            <div className="p-12 text-center text-xs font-bold text-slate-400 bg-white rounded-3xl">جاري تحميل الطلبيات...</div>
+                            <div className="p-12 text-center text-xs font-bold text-slate-400 bg-white rounded-2xl">جاري تحميل الطلبيات...</div>
                         ) : filteredOrders.length === 0 ? (
-                            <div className="p-12 text-center space-y-2 bg-white rounded-3xl">
+                            <div className="p-12 text-center space-y-2 bg-white rounded-2xl">
                                 <Package size={36} className="mx-auto text-slate-300" />
-                                <p className="text-xs font-bold text-slate-500">لا توجد طلبيات مطابقة للبحث، المدينة أو الشهر المحدد.</p>
+                                <p className="text-xs font-bold text-slate-500">لا توجد طلبيات مطابقة للبحث أو الفلتر المحدد.</p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -496,20 +501,18 @@ export default function AdminDashboard() {
                                     const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(`السلام عليكم ${clientName}، معكم Maison Fakia لتأكيد طلبية ${ord.product_name || 'الغرانولا'}.`)}`;
 
                                     return (
-                                        <div key={ord.id} className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-[#D97706]/40 transition space-y-4 flex flex-col justify-between">
+                                        <div key={ord.id} className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-xs hover:shadow-md hover:border-[#D97706]/40 transition space-y-3.5 flex flex-col justify-between">
 
                                             <div className="flex items-start justify-between border-b border-slate-100 pb-3">
-                                                <div className="space-y-1">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-8 h-8 rounded-xl bg-[#FAF9F6] border border-slate-200 text-[#1E3A2B] font-black text-xs flex items-center justify-center shrink-0">
-                                                            {clientName.charAt(0).toUpperCase()}
-                                                        </div>
-                                                        <div>
-                                                            <h3 className="font-black text-[#1E3A2B] text-base leading-snug">{clientName}</h3>
-                                                            <span className="text-xs font-bold text-[#D97706] flex items-center gap-1" dir="ltr">
-                                                                <Phone size={12} /> {ord.phone || 'بدون رقم'}
-                                                            </span>
-                                                        </div>
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className="w-9 h-9 rounded-xl bg-[#FAF9F6] border border-slate-200 text-[#1E3A2B] font-black text-xs flex items-center justify-center shrink-0">
+                                                        {clientName.charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-black text-[#1E3A2B] text-sm sm:text-base leading-snug">{clientName}</h3>
+                                                        <span className="text-xs font-bold text-[#D97706] flex items-center gap-1" dir="ltr">
+                                                            <Phone size={12} /> {ord.phone || 'بدون رقم'}
+                                                        </span>
                                                     </div>
                                                 </div>
 
@@ -517,7 +520,7 @@ export default function AdminDashboard() {
                                                     {getStatusBadge(ord.status || 'Pending')}
                                                     <button
                                                         onClick={() => setDevisSingleOrder(ord)}
-                                                        className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-[#D97706] rounded-xl text-xs font-black border border-amber-200 flex items-center gap-1 cursor-pointer transition"
+                                                        className="h-8 px-2.5 bg-amber-50 hover:bg-amber-100 text-[#D97706] rounded-xl text-xs font-extrabold border border-amber-200 flex items-center gap-1 cursor-pointer transition shrink-0"
                                                         title="عرض Devis الزبون"
                                                     >
                                                         <FileText size={13} />
@@ -526,7 +529,7 @@ export default function AdminDashboard() {
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-3 text-xs bg-[#FAF9F6] p-3.5 rounded-2xl border border-slate-100">
+                                            <div className="grid grid-cols-2 gap-3 text-xs bg-[#FAF9F6] p-3 rounded-xl border border-slate-100">
                                                 <div className="space-y-1">
                                                     <span className="text-[10px] text-slate-400 font-bold block">المنتج والكمية</span>
                                                     <p className="font-extrabold text-[#1E3A2B] line-clamp-1">{ord.product_name || 'غرانولا صحية'}</p>
@@ -535,7 +538,7 @@ export default function AdminDashboard() {
 
                                                 <div className="space-y-1">
                                                     <span className="text-[10px] text-slate-400 font-bold block">المبلغ الإجمالي</span>
-                                                    <p className="font-black text-[#D97706] text-base">{ord.total_price || ord.price || 0} DH</p>
+                                                    <p className="font-black text-[#D97706] text-sm sm:text-base">{ord.total_price || ord.price || 0} DH</p>
                                                     <span className="text-[10px] text-emerald-700 font-bold block">الدفع عند الاستلام</span>
                                                 </div>
 
@@ -553,16 +556,16 @@ export default function AdminDashboard() {
                                                     href={waLink}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="flex-1 py-2.5 bg-[#25D366] hover:bg-emerald-600 text-white rounded-2xl flex items-center justify-center gap-2 text-xs font-extrabold shadow-xs transition"
+                                                    className="flex-1 h-10 bg-[#25D366] hover:bg-emerald-600 text-white rounded-xl flex items-center justify-center gap-2 text-xs font-extrabold shadow-xs transition"
                                                 >
-                                                    <MessageCircle size={16} />
+                                                    <MessageCircle size={15} />
                                                     <span>تواصل عبر الواتساب</span>
                                                 </a>
 
                                                 <select
                                                     value={ord.status || 'Pending'}
                                                     onChange={(e) => updateOrderStatus(ord.id, e.target.value)}
-                                                    className="py-2.5 px-3 bg-[#FAF9F6] border border-slate-200 rounded-2xl text-xs font-extrabold text-slate-700 cursor-pointer focus:outline-none focus:border-[#D97706]"
+                                                    className="h-10 px-3 bg-[#FAF9F6] border border-slate-200 rounded-xl text-xs font-extrabold text-slate-700 cursor-pointer focus:outline-none focus:border-[#D97706]"
                                                 >
                                                     <option value="Pending">قيد الانتظار</option>
                                                     <option value="Confirmed">تأكيد الكوموند</option>
@@ -580,9 +583,10 @@ export default function AdminDashboard() {
                     </div>
                 )}
 
+                {/* PRODUCTS TAB */}
                 {activeTab === 'products' && (
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between bg-white p-4 rounded-3xl border border-slate-200 shadow-xs">
+                        <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
                             <div>
                                 <h2 className="text-base sm:text-lg font-black text-[#1E3A2B]">كتالوج منتجات Maison Fakia</h2>
                                 <p className="text-[11px] text-slate-500">إدارة أكياس الـ Doypack والأسعار المعروضة للزبناء</p>
@@ -590,22 +594,22 @@ export default function AdminDashboard() {
 
                             <button
                                 onClick={() => setShowAddModal(true)}
-                                className="px-4 py-2.5 bg-[#D97706] text-white font-extrabold text-xs rounded-2xl shadow-md flex items-center gap-1.5 cursor-pointer"
+                                className="h-10 px-4 bg-[#D97706] hover:bg-amber-700 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition"
                             >
                                 <Plus size={15} />
-                                <span>+ منتج جديد</span>
+                                <span>منتج جديد</span>
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
                             {products.map((prod) => {
                                 const nameAr = prod.nameAr || prod.name_ar || 'منتج';
                                 const nameFr = prod.nameFr || prod.name_fr || 'Produit';
                                 const image = prod.image || prod.image_url || '/doypack_miel_amandes.png';
 
                                 return (
-                                    <div key={prod.id} className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 p-2.5 sm:p-4 space-y-2 sm:space-y-3 shadow-xs relative flex flex-col justify-between group">
-                                        <div className="w-full h-32 sm:h-52 bg-[#FAF9F6] rounded-xl overflow-hidden border border-slate-100 relative flex items-center justify-center p-1.5 sm:p-2">
+                                    <div key={prod.id} className="bg-white rounded-2xl border border-slate-200 p-3 space-y-3 shadow-xs relative flex flex-col justify-between group">
+                                        <div className="w-full h-36 sm:h-48 bg-[#FAF9F6] rounded-xl overflow-hidden border border-slate-100 relative flex items-center justify-center p-2">
                                             <img
                                                 src={image}
                                                 alt={nameAr}
@@ -619,25 +623,25 @@ export default function AdminDashboard() {
                                             <p className="text-[10px] sm:text-[11px] text-slate-400 font-semibold truncate">{nameFr}</p>
                                         </div>
 
-                                        <div className="flex items-center justify-between pt-1.5 border-t border-slate-100">
+                                        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                                             <div>
-                                                <span className="text-[9px] sm:text-[10px] text-slate-400 block font-bold">الثمن</span>
-                                                <span className="text-sm sm:text-lg font-black text-[#D97706]">{prod.price} <span className="text-[10px] sm:text-xs">DH</span></span>
+                                                <span className="text-[10px] text-slate-400 block font-bold">الثمن</span>
+                                                <span className="text-sm sm:text-base font-black text-[#D97706]">{prod.price} <span className="text-[10px] sm:text-xs">DH</span></span>
                                             </div>
 
                                             <div className="flex items-center gap-1">
                                                 <button
                                                     onClick={() => setEditingProduct(prod)}
-                                                    className="px-2 py-1.5 sm:px-3 sm:py-2 bg-[#1E3A2B] text-white rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold"
+                                                    className="h-8 w-8 bg-[#1E3A2B] text-white rounded-lg flex items-center justify-center text-xs font-bold"
                                                 >
-                                                    <Edit3 size={12} />
+                                                    <Edit3 size={13} />
                                                 </button>
 
                                                 <button
                                                     onClick={() => handleDeleteProduct(prod.id)}
-                                                    className="p-1.5 sm:p-2 bg-rose-50 text-rose-600 rounded-lg sm:rounded-xl text-xs font-bold border border-rose-200"
+                                                    className="h-8 w-8 bg-rose-50 text-rose-600 rounded-lg flex items-center justify-center text-xs font-bold border border-rose-200"
                                                 >
-                                                    <Trash2 size={12} />
+                                                    <Trash2 size={13} />
                                                 </button>
                                             </div>
                                         </div>
@@ -650,58 +654,59 @@ export default function AdminDashboard() {
 
             </main>
 
+            {/* MODAL 1: SINGLE CLIENT DEVIS */}
             {devisSingleOrder && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-                    <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 border border-slate-200 shadow-2xl relative my-auto">
+                    <div className="bg-white rounded-2xl max-w-2xl w-full p-5 sm:p-8 space-y-5 border border-slate-200 shadow-2xl relative my-auto">
 
-                        <div id="devis-single-print" className="space-y-6 text-[#1E3A2B]">
+                        <div id="devis-single-print" className="space-y-5 text-[#1E3A2B]">
                             <div className="flex items-start justify-between border-b border-amber-500/30 pb-4">
                                 <div>
-                                    <h2 className="text-xl font-black text-[#1E3A2B]">MAISON FAKIA</h2>
+                                    <h2 className="text-lg sm:text-xl font-black text-[#1E3A2B]">MAISON FAKIA</h2>
                                     <p className="text-xs font-bold text-[#D97706]">Snacks Artisanaux & Packagings Healthy</p>
                                     <p className="text-[10px] text-slate-400">Casablanca, Maroc | contact@maisonfakia.ma</p>
                                 </div>
                                 <div className="text-left" dir="ltr">
-                                    <span className="text-lg font-black text-[#1E3A2B] block">DEVIS N° DEV-{devisSingleOrder.id ? devisSingleOrder.id.slice(0,6) : '001'}</span>
+                                    <span className="text-sm sm:text-base font-black text-[#1E3A2B] block">DEVIS N° DEV-{devisSingleOrder.id ? devisSingleOrder.id.slice(0,6) : '001'}</span>
                                     <span className="text-xs font-bold text-slate-500 block">Date: {devisSingleOrder.created_at ? devisSingleOrder.created_at.slice(0,10) : new Date().toISOString().slice(0,10)}</span>
                                 </div>
                             </div>
 
-                            <div className="bg-[#FAF9F6] p-4 rounded-2xl border border-slate-200 text-xs">
+                            <div className="bg-[#FAF9F6] p-3.5 rounded-xl border border-slate-200 text-xs">
                                 <span className="font-extrabold text-[#D97706] block mb-1">بيانات الزبون (Client):</span>
                                 <p className="font-black text-[#1E3A2B] text-sm">{getClientName(devisSingleOrder)}</p>
                                 <p className="font-bold text-slate-600 mt-1">الهاتف: {devisSingleOrder.phone}</p>
                                 <p className="font-bold text-slate-600">المدينة: {devisSingleOrder.city}</p>
                             </div>
 
-                            <div className="border border-slate-200 rounded-2xl overflow-hidden">
-                                <table className="w-full text-right text-xs">
+                            <div className="border border-slate-200 rounded-xl overflow-x-auto">
+                                <table className="w-full text-right text-xs min-w-[320px]">
                                     <thead className="bg-[#1E3A2B] text-white font-bold">
                                     <tr>
-                                        <th className="p-3">المنتج (Désignation)</th>
-                                        <th className="p-3 text-center">الكمية</th>
-                                        <th className="p-3 text-center">الثمن</th>
-                                        <th className="p-3 text-left">المجموع</th>
+                                        <th className="p-2.5">المنتج (Désignation)</th>
+                                        <th className="p-2.5 text-center">الكمية</th>
+                                        <th className="p-2.5 text-center">الثمن</th>
+                                        <th className="p-2.5 text-left">المجموع</th>
                                     </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 font-medium">
                                     <tr>
-                                        <td className="p-3 font-bold">{devisSingleOrder.product_name || 'غرانولا صحية'}</td>
-                                        <td className="p-3 text-center">{devisSingleOrder.quantity || 1}</td>
-                                        <td className="p-3 text-center">{devisSingleOrder.price || devisSingleOrder.total_price || 0} DH</td>
-                                        <td className="p-3 text-left font-black text-[#D97706]">{devisSingleOrder.total_price || devisSingleOrder.price || 0} DH</td>
+                                        <td className="p-2.5 font-bold">{devisSingleOrder.product_name || 'غرانولا صحية'}</td>
+                                        <td className="p-2.5 text-center">{devisSingleOrder.quantity || 1}</td>
+                                        <td className="p-2.5 text-center">{devisSingleOrder.price || devisSingleOrder.total_price || 0} DH</td>
+                                        <td className="p-2.5 text-left font-black text-[#D97706]">{devisSingleOrder.total_price || devisSingleOrder.price || 0} DH</td>
                                     </tr>
                                     </tbody>
                                 </table>
                             </div>
 
-                            <div className="flex justify-end pt-2">
-                                <div className="w-60 space-y-1 text-xs bg-[#FAF9F6] p-3 rounded-2xl border border-slate-200 font-bold">
+                            <div className="flex justify-end pt-1">
+                                <div className="w-56 space-y-1 text-xs bg-[#FAF9F6] p-3 rounded-xl border border-slate-200 font-bold">
                                     <div className="flex justify-between text-slate-600">
                                         <span>Total HT:</span>
                                         <span>{devisSingleOrder.total_price || devisSingleOrder.price || 0} DH</span>
                                     </div>
-                                    <div className="flex justify-between text-sm text-[#1E3A2B] border-t border-slate-300 pt-2 font-black">
+                                    <div className="flex justify-between text-sm text-[#1E3A2B] border-t border-slate-300 pt-1.5 font-black">
                                         <span>TOTAL NET TTC:</span>
                                         <span className="text-[#D97706]">{devisSingleOrder.total_price || devisSingleOrder.price || 0} DH</span>
                                     </div>
@@ -709,10 +714,10 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 no-print">
-                            <button onClick={() => setDevisSingleOrder(null)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold">إغلاق</button>
-                            <button onClick={() => window.print()} className="px-5 py-2 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-xl text-xs font-black shadow-md flex items-center gap-1.5 cursor-pointer">
-                                <Printer size={15} />
+                        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 no-print">
+                            <button onClick={() => setDevisSingleOrder(null)} className="h-9 px-4 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold">إغلاق</button>
+                            <button onClick={() => window.print()} className="h-9 px-4 bg-[#1E3A2B] hover:bg-[#D97706] text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-1.5 cursor-pointer">
+                                <Printer size={14} />
                                 <span>حفظ PDF / طباعة</span>
                             </button>
                         </div>
@@ -721,51 +726,53 @@ export default function AdminDashboard() {
                 </div>
             )}
 
+            {/* MODAL 2: MONTHLY DEVIS PRINTABLE (RESPONSIVE FULL FIT FOR MOBILE) */}
             {showMonthlyDevis && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-                    <div className="bg-white rounded-3xl max-w-3xl w-full p-6 sm:p-8 space-y-6 border border-slate-200 shadow-2xl relative my-auto">
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-2 sm:p-6 overflow-y-auto">
+                    <div className="bg-white rounded-2xl max-w-3xl w-full p-4 sm:p-8 space-y-4 sm:space-y-6 border border-slate-200 shadow-2xl relative my-auto max-h-[92vh] overflow-y-auto">
 
-                        <div id="devis-monthly-print" className="space-y-6 text-[#1E3A2B]">
-                            <div className="flex items-start justify-between border-b border-amber-500/30 pb-4">
+                        <div id="devis-monthly-print" className="space-y-4 sm:space-y-6 text-[#1E3A2B]">
+                            <div className="flex flex-col sm:flex-row items-start justify-between border-b border-amber-500/30 pb-3 sm:pb-4 gap-2 sm:gap-0">
                                 <div>
-                                    <h2 className="text-xl font-black text-[#1E3A2B]">MAISON FAKIA</h2>
+                                    <h2 className="text-lg sm:text-xl font-black text-[#1E3A2B]">MAISON FAKIA</h2>
                                     <p className="text-xs font-bold text-[#D97706]">Rapport Mensuel & Devis Global des Ventes</p>
                                     <p className="text-[10px] text-slate-400">Casablanca, Maroc | contact@maisonfakia.ma</p>
                                 </div>
-                                <div className="text-left" dir="ltr">
-                                    <span className="text-base font-black text-[#1E3A2B] block">DEVIS GLOBAL: {selectedMonth === 'all' ? 'TOUS LES MOIS' : selectedMonth}</span>
+                                <div className="text-right sm:text-left" dir="ltr">
+                                    <span className="text-sm sm:text-base font-black text-[#1E3A2B] block">DEVIS GLOBAL: {selectedMonth === 'all' ? 'TOUS LES MOIS' : selectedMonth}</span>
                                     <span className="text-xs font-bold text-slate-500 block">Édité le: {new Date().toLocaleDateString('fr-FR')}</span>
                                     <span className="text-xs font-black text-emerald-600 block">Total Commandes: {filteredOrders.length}</span>
                                 </div>
                             </div>
 
-                            <div className="border border-slate-200 rounded-2xl overflow-hidden">
-                                <table className="w-full text-right text-xs">
+                            {/* RESPONSIVE TABLE WRAPPER FOR MOBILE */}
+                            <div className="border border-slate-200 rounded-xl overflow-x-auto w-full">
+                                <table className="w-full text-right text-xs min-w-[540px]">
                                     <thead className="bg-[#1E3A2B] text-white font-bold">
                                     <tr>
-                                        <th className="p-3">الزبون والهاتف</th>
-                                        <th className="p-3">المنتج</th>
-                                        <th className="p-3 text-center">المدينة</th>
-                                        <th className="p-3 text-center">الحالة</th>
-                                        <th className="p-3 text-left">المبلغ (DH)</th>
+                                        <th className="p-2.5">الزبون والهاتف</th>
+                                        <th className="p-2.5">المنتج</th>
+                                        <th className="p-2.5 text-center">المدينة</th>
+                                        <th className="p-2.5 text-center">الحالة</th>
+                                        <th className="p-2.5 text-left">المبلغ (DH)</th>
                                     </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 font-medium">
                                     {filteredOrders.map((o) => (
                                         <tr key={o.id}>
-                                            <td className="p-2.5 font-bold">{getClientName(o)} ({o.phone})</td>
+                                            <td className="p-2.5 font-bold whitespace-nowrap">{getClientName(o)} <span className="text-[10px] text-slate-500 font-semibold block sm:inline">({o.phone})</span></td>
                                             <td className="p-2.5">{o.product_name || 'غرانولا'}</td>
                                             <td className="p-2.5 text-center">{o.city || 'المغرب'}</td>
-                                            <td className="p-2.5 text-center font-bold text-xs">{o.status || 'Pending'}</td>
-                                            <td className="p-2.5 text-left font-black text-[#D97706]">{o.total_price || o.price || 0} DH</td>
+                                            <td className="p-2.5 text-center font-bold text-[11px]">{o.status || 'Pending'}</td>
+                                            <td className="p-2.5 text-left font-black text-[#D97706] whitespace-nowrap">{o.total_price || o.price || 0} DH</td>
                                         </tr>
                                     ))}
                                     </tbody>
                                 </table>
                             </div>
 
-                            <div className="flex justify-end pt-2">
-                                <div className="w-72 space-y-1.5 text-xs bg-[#FAF9F6] p-4 rounded-2xl border border-slate-200 font-bold">
+                            <div className="flex justify-end pt-1">
+                                <div className="w-full sm:w-72 space-y-1.5 text-xs bg-[#FAF9F6] p-3.5 rounded-xl border border-slate-200 font-bold">
                                     <div className="flex justify-between text-slate-600">
                                         <span>Nombre total de ventes:</span>
                                         <span>{filteredOrders.length}</span>
@@ -774,7 +781,7 @@ export default function AdminDashboard() {
                                         <span>Livraison Globale:</span>
                                         <span className="text-emerald-600">Gratuite</span>
                                     </div>
-                                    <div className="flex justify-between text-base text-[#1E3A2B] border-t border-slate-300 pt-2 font-black">
+                                    <div className="flex justify-between text-sm sm:text-base text-[#1E3A2B] border-t border-slate-300 pt-2 font-black">
                                         <span>TOTAL DU MOIS NET TTC:</span>
                                         <span className="text-[#D97706]">{monthlyTotalRevenue.toLocaleString()} DH</span>
                                     </div>
@@ -782,10 +789,10 @@ export default function AdminDashboard() {
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 no-print">
-                            <button onClick={() => setShowMonthlyDevis(false)} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold">إغلاق</button>
-                            <button onClick={() => window.print()} className="px-5 py-2 bg-[#1E3A2B] hover:bg-[#D97706] text-white text-xs font-black shadow-md flex items-center gap-1.5 cursor-pointer">
-                                <Printer size={15} />
+                        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 no-print">
+                            <button onClick={() => setShowMonthlyDevis(false)} className="h-9 px-4 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold">إغلاق</button>
+                            <button onClick={() => window.print()} className="h-9 px-4 bg-[#1E3A2B] hover:bg-[#D97706] text-white text-xs font-black shadow-xs flex items-center gap-1.5 cursor-pointer">
+                                <Printer size={14} />
                                 <span>حفظ Devis الشهر كـ PDF</span>
                             </button>
                         </div>
